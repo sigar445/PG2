@@ -1,0 +1,10 @@
+2024-10-17 23:20:08 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "GUEST" not found (this database is empty); SQL statement:
+select g1_0.guest_id,g1_0.age,g1_0.name from guest g1_0 [42104-214]
+2024-10-17 23:21:37 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "GUEST" not found (this database is empty); SQL statement:
+insert into guest (age,name,guest_id) values (?,?,default) [42104-214]
+2024-10-17 23:22:29 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
+2024-10-17 23:23:05 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLNonTransientException: The object is already closed [90007-214]
