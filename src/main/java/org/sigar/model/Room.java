@@ -2,12 +2,16 @@ package org.sigar.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Entity
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Room {
 
     @Id
@@ -20,4 +24,10 @@ public class Room {
     @JsonManagedReference
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<Guest> guests;
+
+    public Room(long roomId,int roomNumber,int floor){
+        this.roomId  = roomId;
+        this.floor = floor;
+        this.roomNumber = roomNumber;
+    }
 }

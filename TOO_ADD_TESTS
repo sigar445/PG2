@@ -1,0 +1,189 @@
+To fully test your service, here are different types of tests that you should implement, including integration tests, end-to-end tests, and others to cover the major functionality.
+
+### 1. **Unit Test for `GuestService`**
+
+This test ensures that the service methods like `getAllGuests()` and `addGuest()` work as expected.
+
+```java
+@SpringBootTest
+public class GuestServiceTest {
+
+    @MockBean
+    private GuestRepository guestRepository;
+
+    @Autowired
+    private GuestService guestService;
+
+    @Test
+    public void testGetAllGuests() {
+        List<Guest> guests = List.of(new Guest(1L, "Alice", 25, new Room(1L, 101, 1)));
+        when(guestRepository.findAll()).thenReturn(guests);
+
+        List<GuestResponseDTO> guestDTOs = guestService.getAllGuests();
+
+        assertEquals(1, guestDTOs.size());
+        assertEquals("Alice", guestDTOs.get(0).getName());
+        assertEquals(101, guestDTOs.get(0).getRoomNumber());
+    }
+
+    @Test
+    public void testAddGuest() {
+        Guest guest = new Guest(0, "John", 30, new Room(1L, 101, 1));
+        when(guestRepository.saveAndFlush(guest)).thenReturn(guest);
+
+        Guest savedGuest = guestService.addGuest(guest);
+
+        assertNotNull(savedGuest);
+        assertEquals("John", savedGuest.getName());
+        assertEquals(30, savedGuest.getAge());
+    }
+}
+```
+
+### 2. **Integration Test for `GuestController`**
+
+Integration tests ensure that the controller, service, and repository layers work well together. You can use `@SpringBootTest` with `@AutoConfigureMockMvc` to test your `GuestController` endpoints.
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+public class GuestControllerIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private GuestService guestService;
+
+    @Test
+    public void testGetAllGuests() throws Exception {
+        List<GuestResponseDTO> guestDTOs = List.of(new GuestResponseDTO(1L, "Alice", 25, 1L, 101, 1));
+
+        when(guestService.getAllGuests()).thenReturn(guestDTOs);
+
+        mockMvc.perform(get("/api/PG2/guests"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].name").value("Alice"))
+            .andExpect(jsonPath("$[0].roomNumber").value(101));
+    }
+
+    @Test
+    public void testAddGuest() throws Exception {
+        Guest guest = new Guest(0, "John", 30, new Room(1L, 101, 1));
+
+        when(guestService.addGuest(any(Guest.class))).thenReturn(guest);
+
+        mockMvc.perform(post("/api/PG2/guests")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"John\",\"age\":30,\"room\":{\"roomId\":1}}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("John"))
+            .andExpect(jsonPath("$.age").value(30));
+    }
+}
+```
+
+### 3. **End-to-End Test with `TestRestTemplate`**
+
+For a more comprehensive test, you can use `TestRestTemplate` to perform actual HTTP requests and test the whole flow from controller to database.
+
+```java
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class GuestEndToEndTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    public void testGetAllGuests() {
+        ResponseEntity<List<GuestResponseDTO>> response = restTemplate.exchange(
+                "/api/PG2/guests", HttpMethod.GET, null,
+                new ParameterizedTypeReference<>() {});
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Alice", response.getBody().get(0).getName());
+    }
+
+    @Test
+    public void testAddGuest() {
+        Guest guest = new Guest(0, "John", 30, new Room(1L, 101, 1));
+        ResponseEntity<Guest> response = restTemplate.postForEntity("/api/PG2/guests", guest, Guest.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals("John", response.getBody().getName());
+    }
+}
+```
+
+### 4. **Database Integration Tests**
+
+These tests ensure that the data layer is correctly integrated with the database. You can use an in-memory database like H2 or a file-based H2 setup.
+
+```java
+@DataJpaTest
+public class GuestRepositoryTest {
+
+    @Autowired
+    private GuestRepository guestRepository;
+
+    @Test
+    public void testFindAllGuests() {
+        Room room = new Room(1L, 101, 1);
+        Guest guest = new Guest(0, "John", 30, room);
+        guestRepository.saveAndFlush(guest);
+
+        List<Guest> guests = guestRepository.findAll();
+        assertEquals(1, guests.size());
+        assertEquals("John", guests.get(0).getName());
+    }
+
+    @Test
+    public void testSaveGuest() {
+        Room room = new Room(1L, 101, 1);
+        Guest guest = new Guest(0, "Alice", 25, room);
+        Guest savedGuest = guestRepository.saveAndFlush(guest);
+
+        assertNotNull(savedGuest);
+        assertEquals("Alice", savedGuest.getName());
+        assertEquals(25, savedGuest.getAge());
+    }
+}
+```
+
+### 5. **Error Handling Tests**
+
+To ensure that error handling works as expected, especially for edge cases like invalid input or repository failures.
+
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+public class GuestControllerErrorTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private GuestService guestService;
+
+    @Test
+    public void testAddGuestError() throws Exception {
+        when(guestService.addGuest(any(Guest.class))).thenThrow(new RuntimeException("Database error"));
+
+        mockMvc.perform(post("/api/PG2/guests")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Invalid Guest\"}"))
+            .andExpect(status().isInternalServerError())
+            .andExpect(content().string("Database error"));
+    }
+}
+```
+
+### Summary of Tests:
+- **Unit Tests**: Ensure individual methods in `GuestService` work as expected.
+- **Integration Tests**: Validate interaction between different layers (controller, service, repository).
+- **End-to-End Tests**: Test the entire application flow using `TestRestTemplate`.
+- **Database Integration**: Validate persistence layer with JPA repository tests.
+- **Error Handling Tests**: Ensure appropriate error handling responses for exceptions.
+
+These tests cover your `GuestService` and `GuestController` comprehensively for different cases!
