@@ -7,7 +7,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @Data
-public class RoomDTO {
+public class RoomResponseDTO {
     private long roomId;
     private int roomNumber;
     private int floor;

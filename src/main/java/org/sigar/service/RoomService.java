@@ -1,7 +1,7 @@
 package org.sigar.service;
 
 import org.sigar.dto.DTOConverter;
-import org.sigar.dto.RoomDTO;
+import org.sigar.dto.RoomResponseDTO;
 import org.sigar.model.Room;
 import org.sigar.repo.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +19,7 @@ public class RoomService {
         this.roomRepository = roomRepository;
     }
 
-    public List<RoomDTO> getAllRooms(){
+    public List<RoomResponseDTO> getAllRooms(){
         List<Room> rooms =  roomRepository.findAll();
         return rooms.stream()
                 .map(DTOConverter::convertToRoomDTO)

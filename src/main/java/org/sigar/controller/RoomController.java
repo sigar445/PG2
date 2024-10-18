@@ -1,13 +1,11 @@
 package org.sigar.controller;
 
-import jakarta.persistence.criteria.Root;
-import org.sigar.dto.RoomDTO;
+import org.sigar.dto.RoomResponseDTO;
 import org.sigar.model.Room;
 import org.sigar.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,7 +22,7 @@ public class RoomController {
     }
 
     @GetMapping
-    public ResponseEntity<List<RoomDTO>> getAllRooms(){
+    public ResponseEntity<List<RoomResponseDTO>> getAllRooms(){
         return ResponseEntity.ok(roomService.getAllRooms());
     }
 
