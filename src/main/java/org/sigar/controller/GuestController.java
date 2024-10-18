@@ -1,5 +1,6 @@
 package org.sigar.controller;
 
+import org.sigar.dto.GuestDTO;
 import org.sigar.model.Guest;
 import org.sigar.service.GuestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class GuestController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Guest>> getAllGuests(){
+    public ResponseEntity<List<GuestDTO>> getAllGuests(){
         return ResponseEntity.ok(guestService.getAllGuests());
     }
 

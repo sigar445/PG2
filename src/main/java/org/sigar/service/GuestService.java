@@ -1,5 +1,7 @@
 package org.sigar.service;
 
+import org.sigar.dto.DTOConverter;
+import org.sigar.dto.GuestDTO;
 import org.sigar.model.Guest;
 import org.sigar.repo.GuestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +18,11 @@ public class GuestService {
         this.guestRepository = guestRepository;
     }
 
-    public List<Guest> getAllGuests(){
-        return guestRepository.findAll();
+    public List<GuestDTO> getAllGuests(){
+        List<Guest> guests =  guestRepository.findAll();
+        return guests.stream()
+                .map(DTOConverter::covertToGuestDTO)
+                .toList();
     }
     public Guest addGuest(Guest guest){
         return guestRepository.saveAndFlush(guest);
