@@ -5,16 +5,16 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
-@AllArgsConstructor
-@Data
-public class GuestResponseDTO {
-    private long guestId;
-    private String name;
-    private Integer age;
-    private long roomId;
-    private long roomNumber;
-    private long floor;
-    private String phoneNumber;
-    private LocalDate dateOfOccupancy;
-
+public record GuestResponseDTO(
+        long guestId,
+        String name,
+        Integer age,
+        long roomId,
+        long roomNumber,
+        long floor,
+        String phoneNumber,
+        LocalDate dateOfOccupancy
+) {
+    // The record is immutable and automatically creates constructor, getters, toString, equals, and hashCode.
 }
+
