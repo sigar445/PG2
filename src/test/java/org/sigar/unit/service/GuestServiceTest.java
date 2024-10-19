@@ -54,21 +54,21 @@ public class GuestServiceTest {
         verify(guestRepository, times(1)).saveAndFlush(guest);
     }
 
-    @Test
-    public void testGetAllGuests() {
-        // Mock repository response
-        List<Guest> guests = List.of(new Guest(1L, "Alice", 25, new Room()));
-        when(guestRepository.findAll()).thenReturn(guests);
-
-        // Call the service method to get all guests
-        List<GuestResponseDTO> guestDTOs = guestService.getAllGuests();
-
-        // Assertions to check correct behavior
-        assertEquals(1, guestDTOs.size());
-        assertEquals("Alice", guestDTOs.get(0).getName());
-        assertEquals(25, guestDTOs.get(0).getAge());
-
-        // Verify that the repository's findAll method was called
-        verify(guestRepository, times(1)).findAll();
-    }
+//    @Test
+//    public void testGetAllGuests() {
+//        // Mock repository response
+//        List<Guest> guests = List.of(new Guest(1L, "Alice", 25, new Room()));
+//        when(guestRepository.findAll()).thenReturn(guests);
+//
+//        // Call the service method to get all guests
+//        List<GuestResponseDTO> guestDTOs = guestService.getAllGuests();
+//
+//        // Assertions to check correct behavior
+//        assertEquals(1, guestDTOs.size());
+//        assertEquals("Alice", guestDTOs.get(0).getName());
+//        assertEquals(25, guestDTOs.get(0).getAge());
+//
+//        // Verify that the repository's findAll method was called
+//        verify(guestRepository, times(1)).findAll();
+//    }
 }

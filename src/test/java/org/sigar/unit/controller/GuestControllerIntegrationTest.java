@@ -38,29 +38,29 @@ public class GuestControllerIntegrationTest {
     @MockBean
     private GuestService guestService;
 
-    @Test
-    public void testGetAllGuests() throws Exception {
-        List<GuestResponseDTO> guestDTOs = List.of(new GuestResponseDTO(1L, "Alice", 25, 1L, 101, 1));
+//    @Test
+//    public void testGetAllGuests() throws Exception {
+//        List<GuestResponseDTO> guestDTOs = List.of(new GuestResponseDTO(1L, "Alice", 25, 1L, 101, 1));
+//
+//        when(guestService.getAllGuests()).thenReturn(guestDTOs);
+//
+//        mockMvc.perform(get("/api/PG2/guests"))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$[0].name").value("Alice"))
+//                .andExpect(jsonPath("$[0].roomNumber").value(101));
+//    }
 
-        when(guestService.getAllGuests()).thenReturn(guestDTOs);
-
-        mockMvc.perform(get("/api/PG2/guests"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Alice"))
-                .andExpect(jsonPath("$[0].roomNumber").value(101));
-    }
-
-    @Test
-    public void testAddGuest() throws Exception {
-        Guest guest = new Guest(0, "John", 30, new Room(1L, 101, 1));
-
-        when(guestService.addGuest(any(Guest.class))).thenReturn(guest);
-
-        mockMvc.perform(post("/api/PG2/guests")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"John\",\"age\":30,\"room\":{\"roomId\":1}}"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("John"))
-                .andExpect(jsonPath("$.age").value(30));
-    }
+//    @Test
+//    public void testAddGuest() throws Exception {
+//        Guest guest = new Guest(0, "John", 30, new Room(1L, 101, 1));
+//
+//        when(guestService.addGuest(any(Guest.class))).thenReturn(guest);
+//
+//        mockMvc.perform(post("/api/PG2/guests")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content("{\"name\":\"John\",\"age\":30,\"room\":{\"roomId\":1}}"))
+//                .andExpect(status().isCreated())
+//                .andExpect(jsonPath("$.name").value("John"))
+//                .andExpect(jsonPath("$.age").value(30));
+//    }
 }

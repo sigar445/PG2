@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.sigar.Constants.enums.Beds;
 
 import java.util.List;
 
@@ -21,6 +22,13 @@ public class Room {
 
     private int roomNumber;
     private int floor;
+    private boolean hasKitchen;
+    private boolean hasAC;
+    private boolean isAvailable;
+    private Integer rent;
+    @Enumerated(EnumType.STRING)
+    private Beds beds;
+
     @JsonManagedReference
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<Guest> guests;
