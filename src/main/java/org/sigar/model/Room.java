@@ -1,6 +1,7 @@
 package org.sigar.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class Room {
     private int floor;
     private boolean hasKitchen;
     private boolean hasAC;
+    @JsonProperty("isAvailable")
     private boolean isAvailable;
     private Integer rent;
     @Enumerated(EnumType.STRING)
