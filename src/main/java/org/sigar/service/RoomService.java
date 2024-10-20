@@ -40,6 +40,9 @@ public class RoomService {
     public Room addRoom(Room room){
         return roomRepository.save(room);
     }
+    public boolean removeRoom(Long roomId){
+        return guestRoomManager.removeRoom(roomId);
+    }
 }
 
 

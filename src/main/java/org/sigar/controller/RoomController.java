@@ -51,6 +51,16 @@ public class RoomController {
         }
     }
 
+    @DeleteMapping("/{roomId}")
+    public ResponseEntity<String> deleteRoom(@PathVariable Long roomId){
+        boolean isRemoved = roomService.removeRoom(roomId);
+        if (isRemoved) {
+            return ResponseEntity.ok("Room with ID " + roomId + " removed successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Room with ID " + roomId + " not found.");
+        }
+    }
 }
 
 

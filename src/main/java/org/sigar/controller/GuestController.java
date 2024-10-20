@@ -61,16 +61,16 @@ public class GuestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedGuest);
     }
 
-//    @DeleteMapping("/{guestId}")
-//    public ResponseEntity<String> removeGuest(@PathVariable Long guestId){
-//        boolean isRemoved = guestService.removeGuest(guestId);
-//        if (isRemoved) {
-//            return ResponseEntity.ok("Guest with ID " + guestId + " removed successfully.");
-//        } else {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-//                    .body("Guest with ID " + guestId + " not found.");
-//        }
-//    }
+    @DeleteMapping("/{guestId}")
+    public ResponseEntity<String> removeGuest(@PathVariable Long guestId){
+        boolean isRemoved = guestService.removeGuest(guestId);
+        if (isRemoved) {
+            return ResponseEntity.ok("Guest with ID " + guestId + " removed successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Guest with ID " + guestId + " not found.");
+        }
+    }
 
 
     @GetMapping("/occupancy")

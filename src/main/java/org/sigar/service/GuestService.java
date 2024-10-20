@@ -34,14 +34,9 @@ public class GuestService {
     public Guest addGuest(Guest guest){
         return guestRepository.saveAndFlush(guest);
     }
-//    public boolean removeGuest(Long guestId){
-//        Optional<Guest> guestOptional = guestRepository.findById(guestId);
-//        if(guestOptional.isEmpty()){
-//            return false;
-//        }
-//        guestRepository.deleteById(guestId);
-//        return true;
-//    }
+    public boolean removeGuest(Long guestId){
+        return guestRoomManager.removeGuest(guestId);
+    }
     public List<GuestResponseDTO> getGuestsByAgeRange(Integer startAge, Integer endAge){
         List<Guest> guests = guestRepository.findByAgeBetween(startAge,endAge);
         return DTOConverter.covertToGuestDTO(guests);

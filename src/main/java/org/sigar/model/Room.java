@@ -30,7 +30,8 @@ public class Room {
     private Beds beds;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)(all will include the delete operations too)
+    @OneToMany(mappedBy = "room", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     List<Guest> guests;
 
     public Room(long roomId,int roomNumber,int floor){
@@ -45,9 +46,9 @@ public class Room {
         guest.setRoom(this);
     }
 
-    private void removeGuest(Guest guest){
+    public void removeGuest(Guest guest){
         this.guests.remove(guest);
         this.setAvailable(true);
-        guest.setRoom(this);
+        guest.setRoom(null);
     }
 }
