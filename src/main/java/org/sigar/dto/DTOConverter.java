@@ -13,48 +13,37 @@ public class DTOConverter {
                 .stream()
                 .map(Guest::getName)
                 .toList();
-        return new RoomResponseDTO(room.getRoomId(), room.getRoomNumber(), room.getFloor(),guests);
+        return new RoomResponseDTO(
+                room.getRoomId(),
+                room.getRoomNumber(),
+                room.getFloor(),
+                room.isAvailable(),
+                guests
+        );
     }
     public static List<RoomResponseDTO> convertToRoomDTO(List<Room> rooms){
         if(rooms == null) return Collections.emptyList();
         List<RoomResponseDTO> responseDTOList = new ArrayList<>();
-        for(Room room : rooms){
-        List<String> guests = room.getGuests()
-                .stream()
-                .map(Guest::getName)
+        return rooms.stream()
+                .map(DTOConverter::convertToRoomDTO)
                 .toList();
-
-            responseDTOList.add(new RoomResponseDTO(
-                    room.getRoomId(),
-                    room.getRoomNumber(),
-                    room.getFloor(),
-                    guests
-            ));
-        }
-        return responseDTOList;
     }
 
     public static GuestResponseDTO covertToGuestDTO(Guest guest){
         Room room = guest.getRoom();
-        return new GuestResponseDTO(guest.getGuestId(),guest.getName(), guest.getAge(), room.getRoomId(), room.getRoomNumber(),
-                room.getFloor(), guest.getPhoneNumber(),guest.getDateOfOccupancy());
+        return new GuestResponseDTO(guest.getGuestId(),
+                guest.getName(),
+                guest.getAge(),
+                room.getRoomId(),
+                room.getRoomNumber(),
+                room.getFloor(),
+                guest.getPhoneNumber(),
+                guest.getDateOfOccupancy());
     }
     public static List<GuestResponseDTO> covertToGuestDTO(List<Guest> guests){
         if (guests == null) return Collections.emptyList();
         return guests.stream()
-                .map(guest -> {
-                    Room room = guest.getRoom();
-                    return new GuestResponseDTO(
-                            guest.getGuestId(),
-                            guest.getName(),
-                            guest.getAge(),
-                            room.getRoomId(),
-                            room.getRoomNumber(),
-                            room.getFloor(),
-                            guest.getPhoneNumber(),
-                            guest.getDateOfOccupancy()
-                    );
-                })
+                .map(DTOConverter::covertToGuestDTO)
                 .toList();
     }
 

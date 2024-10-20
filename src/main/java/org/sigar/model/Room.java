@@ -38,4 +38,16 @@ public class Room {
         this.floor = floor;
         this.roomNumber = roomNumber;
     }
+
+    public void addGuest(Guest guest) {
+        this.guests.add(guest);
+        this.setAvailable(false);
+        guest.setRoom(this);
+    }
+
+    private void removeGuest(Guest guest){
+        this.guests.remove(guest);
+        this.setAvailable(true);
+        guest.setRoom(this);
+    }
 }

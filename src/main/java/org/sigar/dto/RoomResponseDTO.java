@@ -11,5 +11,6 @@ public class RoomResponseDTO {
     private long roomId;
     private int roomNumber;
     private int floor;
+    boolean isAvailable;
     private List<String> guestNames;
 }

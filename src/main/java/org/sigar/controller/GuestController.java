@@ -61,6 +61,39 @@ public class GuestController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedGuest);
     }
 
+//    @DeleteMapping("/{guestId}")
+//    public ResponseEntity<String> removeGuest(@PathVariable Long guestId){
+//        boolean isRemoved = guestService.removeGuest(guestId);
+//        if (isRemoved) {
+//            return ResponseEntity.ok("Guest with ID " + guestId + " removed successfully.");
+//        } else {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body("Guest with ID " + guestId + " not found.");
+//        }
+//    }
+
+
+    @GetMapping("/occupancy")
+    public ResponseEntity<List<GuestResponseDTO>> getGuestsBetweenDateOfOccupancy(
+            @RequestParam("startDate") Optional<LocalDate> startDate,
+            @RequestParam("endDate") Optional<LocalDate> endDate){
+
+        if(startDate.isEmpty() || endDate.isEmpty() || startDate.get().isAfter(endDate.get())){
+            logger.info("Invalid age range parameters: startAge={}, endAge={}", startDate, endDate);
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+
+        logger.info("Finding Guests with dates of occupancy between {} and {}",startDate.get(),endDate.get());
+        List<GuestResponseDTO> guests = guestService.getGuestsBetweenDateOfOccupancy(
+                startDate.get(),
+                endDate.get());
+
+        if(guests.isEmpty()){
+            logger.info("No guests found for date range {} to {}", startDate.get(), endDate.get());
+            ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+        return ResponseEntity.ok(guests);
+    }
     // Optional: Add error handling methods
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleException(Exception e) {
@@ -68,18 +101,3 @@ public class GuestController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 }
-
-
-//    @GetMapping("/occupancy")
-//    public ResponseEntity<List<GuestResponseDTO>> getGuestsBetweenDateOfOccupancy(
-//            @RequestParam("startDate") LocalDate startDate,
-//            @RequestParam("endDate") LocalDate endDate){
-//        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
-//            return ResponseEntity.badRequest().body(Collections.emptyList());  // 400 BAD REQUEST for invalid input
-//        }
-//        List<GuestResponseDTO> guests = guestService.getGuestsBetweenDateOfOccupancy(startDate, endDate);
-//        if (guests.isEmpty()) {
-//            return ResponseEntity.noContent().build();  // 204 NO CONTENT if no guests found
-//        }
-//      return ResponseEntity.ok(guests);
-//    }
