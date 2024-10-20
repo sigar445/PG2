@@ -1,0 +1,46 @@
+The difference between these two `@JoinColumn` annotations in your `@OneToOne` relationship is subtle but important:
+
+### 1. **With `referencedColumnName` Specified:**
+```java
+@OneToOne
+@JoinColumn(name = "room_id", referencedColumnName = "room_id")
+private Room room;
+```
+
+- **`name = "room_id"`:** This specifies the name of the foreign key column in the table of the owning entity (the entity that contains this `Room` field). In this case, the foreign key column will be named `room_id`.
+- **`referencedColumnName = "room_id"`:** This specifies which column in the **Room** entity's table the foreign key references. So here, it explicitly states that the `room_id` in this entity refers to the `room_id` column in the `Room` table.
+
+This is useful when the column in the `Room` entity (the target of the relationship) is not the primary key, or if you want to reference a specific column other than the default primary key column. In your case, if the `Room` table has a column `room_id` that you want to reference, this would be correct.
+
+### 2. **Without `referencedColumnName`:**
+```java
+@OneToOne
+@JoinColumn(name = "room_id")
+private Room room;
+```
+
+- **`name = "room_id"`:** Again, this specifies the name of the foreign key column in the owning entity's table (where this `Room` field exists).
+- **No `referencedColumnName`:** If `referencedColumnName` is omitted, Hibernate defaults to referencing the **primary key** of the related entity (in this case, the primary key of the `Room` entity). This is the most common case and is often sufficient when the relationship should simply use the primary key of the `Room` table.
+
+### **Key Differences:**
+- **Use of `referencedColumnName`:** Use it if the column you are referencing in the `Room` entity **is not** the primary key, or if you want to explicitly define the column for clarity.
+- **No `referencedColumnName`:** This is the typical case and will automatically reference the primary key of the related `Room` entity. It’s more concise and is appropriate when you are using the primary key of `Room`.
+
+### Which One to Use?
+- If **`room_id`** in the `Room` entity is its **primary key**, you can safely omit `referencedColumnName` and use the simpler version:
+
+  ```java
+  @OneToOne
+  @JoinColumn(name = "room_id")
+  private Room room;
+  ```
+
+- If **`room_id`** is **not** the primary key of the `Room` entity, you should specify `referencedColumnName` to explicitly define which column is being referenced:
+
+  ```java
+  @OneToOne
+  @JoinColumn(name = "room_id", referencedColumnName = "room_id")
+  private Room room;
+  ```
+
+In most cases, the primary key is used, so you likely don't need `referencedColumnName`.

@@ -1,0 +1,134 @@
+To design a low-level architecture for the PG (Paying Guest) service, you should focus on defining the core services, entities, and relationships while ensuring that the design supports future scalability and maintainability. Here’s how you can approach this:
+
+### 1. **Identify Core Entities**
+   Each entity will represent a key domain object in your system. Start with the following:
+
+   - **Room**: Represents individual rooms in the PG. Each room will have attributes such as room number, type (single/double/shared), status (occupied/vacant), and price per month.
+   - **Guest**: Represents a person staying in the PG. Attributes include name, contact details, room assigned, date of occupancy, and payment history.
+   - **Payment**: Represents the rent payments, utility bills, and other financial transactions. Attributes include amount, due date, payment date, type (rent/utility), and status (paid/unpaid).
+   - **Utilities**: Represents various utility services (water, electricity, WiFi, etc.) and their billing details.
+   - **Rent Agreement**: A contract between the guest and the PG owner that includes the terms like rent amount, notice period, advance, etc.
+   - **Notice**: Represents the notice that a guest gives for leaving the PG (e.g., one month before moving out).
+
+### 2. **Core Services**
+   Now, define services to handle the logic and operations on these entities. The three services you’ve thought of (Room, Rental, Guest) make sense. Here’s a more detailed breakdown:
+
+   #### a. **Room Service**
+   This service will handle all the operations related to rooms.
+
+   **Responsibilities**:
+   - Add, remove, or update room details.
+   - Check availability (vacant/occupied status).
+   - Fetch room details like rent, occupancy type (single/shared), etc.
+   - Maintain room inventory.
+
+   **Methods**:
+   - `addRoom(Room room)`
+   - `removeRoom(int roomId)`
+   - `updateRoom(int roomId, Room updatedRoom)`
+   - `getAvailableRooms()`
+   - `getRoomDetails(int roomId)`
+
+   #### b. **Guest Service**
+   This service will handle guest-related operations.
+
+   **Responsibilities**:
+   - Add, remove, or update guest details.
+   - Handle guest check-in/check-out, assign room.
+   - Manage guest notice (1-month notice period).
+   - Track guests' rental status.
+
+   **Methods**:
+   - `addGuest(Guest guest, int roomId)`
+   - `removeGuest(int guestId)`
+   - `updateGuest(int guestId, Guest updatedGuest)`
+   - `getGuestDetails(int guestId)`
+   - `assignRoom(int guestId, int roomId)`
+   - `recordNotice(int guestId, LocalDate noticeDate)`
+   - `getGuestsWithNotice()`
+
+   #### c. **Rental Service**
+   This service will handle the financial aspects.
+
+   **Responsibilities**:
+   - Handle rent payments (monthly basis and advance payments).
+   - Handle utility payments (WiFi, water, electricity, etc.).
+   - Track payment history.
+   - Issue payment receipts.
+
+   **Methods**:
+   - `payRent(int guestId, Payment payment)`
+   - `payUtilities(int guestId, Payment payment)`
+   - `getPaymentHistory(int guestId)`
+   - `getPendingPayments(int guestId)`
+
+### 3. **Relationships Between Entities**
+   - **Room and Guest**: A room can have one or more guests (if shared), and a guest must be assigned to a room.
+   - **Guest and Payment**: Each guest will be associated with multiple payments over time (rent, utilities, etc.).
+   - **Room and Payment**: Payments are tied to rooms since the rent amount is typically associated with the room.
+
+### 4. **Design the Database**
+   Based on the entities and their relationships, your database schema might look something like this:
+
+   - **Room Table**: `room_id`, `room_number`, `type`, `status`, `monthly_rent`, `max_occupancy`, `current_occupancy`
+   - **Guest Table**: `guest_id`, `name`, `contact_details`, `room_id`, `date_of_occupancy`, `advance_paid`
+   - **Payment Table**: `payment_id`, `guest_id`, `amount`, `payment_date`, `due_date`, `type`, `status`
+   - **Utilities Table**: `utility_id`, `guest_id`, `type`, `amount`, `due_date`, `status`
+   - **RentAgreement Table**: `agreement_id`, `guest_id`, `room_id`, `rent_amount`, `advance_amount`, `start_date`, `notice_period`
+   - **Notice Table**: `notice_id`, `guest_id`, `notice_date`, `effective_date`
+
+### 5. **Handling Rent Payments**
+   Rent payments are on a **monthly basis**, with one month’s **advance rent**. A basic approach for calculating rent is:
+
+   - When a guest checks in, they pay the **advance rent**.
+   - The system should keep track of the **occupancy date** for each guest, so rent can be billed **monthly on the same day**.
+   - If the guest leaves, the advance rent can be adjusted for the last month of stay.
+
+### 6. **Core Components in Code**
+   Here’s a basic example of how these services could be implemented in Java:
+
+   #### **RoomService.java**
+   ```java
+   public class RoomService {
+       public Room addRoom(Room room) { /*...*/ }
+       public void removeRoom(int roomId) { /*...*/ }
+       public Room updateRoom(int roomId, Room room) { /*...*/ }
+       public List<Room> getAvailableRooms() { /*...*/ }
+       public Room getRoomDetails(int roomId) { /*...*/ }
+   }
+   ```
+
+   #### **GuestService.java**
+   ```java
+   public class GuestService {
+       public Guest addGuest(Guest guest, int roomId) { /*...*/ }
+       public void removeGuest(int guestId) { /*...*/ }
+       public Guest updateGuest(int guestId, Guest guest) { /*...*/ }
+       public Guest getGuestDetails(int guestId) { /*...*/ }
+       public void assignRoom(int guestId, int roomId) { /*...*/ }
+       public void recordNotice(int guestId, LocalDate noticeDate) { /*...*/ }
+       public List<Guest> getGuestsWithNotice() { /*...*/ }
+   }
+   ```
+
+   #### **RentalService.java**
+   ```java
+   public class RentalService {
+       public Payment payRent(int guestId, Payment payment) { /*...*/ }
+       public Payment payUtilities(int guestId, Payment payment) { /*...*/ }
+       public List<Payment> getPaymentHistory(int guestId) { /*...*/ }
+       public List<Payment> getPendingPayments(int guestId) { /*...*/ }
+   }
+   ```
+
+### 7. **Designing for Extensibility**
+   - **Utility Payments**: You can later expand the `RentalService` to handle dynamic utility billing by adding support for different utility types (water, electricity, etc.).
+   - **Notifications**: A notification system could be integrated for sending rent reminders or utility payment notices to guests.
+   - **Maintenance Requests**: You can expand the `RoomService` to allow guests to report issues (maintenance requests) for the room they occupy.
+
+### 8. **Next Steps**
+   - Define class diagrams to better visualize the interactions between entities.
+   - Create a sequence diagram to show how a guest's rent payment is processed from initiation to completion.
+   - Focus on clean, modular design, adhering to SOLID principles to ensure each service is responsible for a specific domain task.
+
+This LLD approach provides clarity on how to structure the core components of the PG service and ensures that all guest, rent, room, and utility-related operations are well-organized and scalable.

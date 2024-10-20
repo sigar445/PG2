@@ -1,0 +1,76 @@
+In your current JPA entity design, you're using a `ManyToOne` relationship in the `Guest` class, which indicates that multiple guests can occupy the same room. However, you haven't defined a corresponding collection of guests in the `Room` entity to reflect this relationship.
+
+### Suggested Changes:
+To better model the relationship between `Room` and `Guest`, you should consider the following adjustments:
+
+1. **Add a List of Guests to the Room Class**:
+   - This explicitly represents the one-to-many relationship (one room can have many guests).
+   - Use the `@OneToMany` annotation to define this relationship.
+
+2. **Change the RoomId in Guest Class**:
+   - Instead of using `long roomId`, you can directly link to the `Room` entity. This approach leverages the ORM capabilities of JPA for easier navigation and querying.
+
+Here’s how you can modify your classes:
+
+### Updated `Room` Class:
+```java
+@Entity
+public class Room {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long id;
+
+    private byte roomNo;
+    private byte floor;
+    private byte beds;
+    private boolean hasKitchen;
+    private boolean hasAC;
+    private int rent;
+    private long houseId;
+
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Guest> currentOccupants = new ArrayList<>(); // Initialize to avoid NullPointerException
+
+    // Getters and Setters
+}
+```
+
+### Updated `Guest` Class:
+```java
+@Entity
+public class Guest {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long guestId;
+
+    private String name;
+    private String address;
+    private byte age;
+
+    @Column(length = 20)
+    private String phoneNumber;
+
+    private LocalDate dateOfOccupancy;
+
+    @ManyToOne
+    @JoinColumn(name = "room_id", nullable = false)
+    private Room room; // Change to Room entity instead of long roomId
+
+    // Getters and Setters
+}
+```
+
+### Key Changes Explained:
+- **List of Guests in Room**: Adding `@OneToMany(mappedBy = "room")` in the `Room` class establishes a relationship that indicates one room can have multiple guests. The `mappedBy` attribute points to the `room` field in the `Guest` class, establishing the bidirectional relationship.
+
+- **Room Reference in Guest**: Changing `private long roomId;` to `private Room room;` allows you to directly reference the `Room` entity, providing easier access to room details without needing to manually manage the ID.
+
+- **Initialization**: It's a good practice to initialize the `List<Guest>` to avoid `NullPointerException` when you try to add guests to the list.
+
+### When to Include List of Guests:
+- **Include the list of guests in the Room class** if you anticipate needing to frequently access the list of occupants for any operations, like checking if a room is occupied, managing guests, or displaying occupancy details.
+
+- If you don't need direct access to the list of guests from the Room entity, and will only be managing guests independently, you can omit the list in `Room`.
+
+### Conclusion:
+Adding a list of guests to the `Room` class and changing the `Guest` class to reference the `Room` entity will create a clearer and more manageable data model. This structure facilitates easier queries and better represents the relationships between rooms and their occupants.

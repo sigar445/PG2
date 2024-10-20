@@ -1,0 +1,267 @@
+For the low-level design (LLD) of a PG service, where occupants pay rent on a monthly basis with a 1-month advance, you can break it down into several services and focus on key components. Here's an approach:
+
+### 1. **Identify Core Services**
+   - **Room Service**: Manage rooms (adding, removing, updating availability).
+   - **Guest Service**: Handle guest-related operations (registering guests, removing them, issuing notices, etc.).
+   - **Rental Service**: Manage rent collection, advance payments, utility bills, due dates, etc.
+   - **Payment Service**: Process payments for rent and utilities, manage transaction records.
+
+### 2. **Define Entities and Relationships**
+   - **Guest**: Stores details like name, ID, date of joining, payment details, etc.
+   - **Room**: Holds information on room number, type (single/double), rent amount, occupancy status.
+   - **Rental Agreement**: Connects the guest and the room, tracks advance rent, and monthly payment cycle.
+   - **Transaction**: Records each payment with the amount, type (rent/utilities), and date.
+
+### 3. **Class Design**
+   - **Guest**:
+     ```java
+     class Guest {
+         String guestId;
+         String name;
+         LocalDate dateOfJoining;
+         PaymentDetails paymentDetails; // could be another class for storing bank/card info
+         RentalAgreement rentalAgreement;
+     }
+     ```
+   - **Room**:
+     ```java
+     class Room {
+         String roomId;
+         RoomType type;  // Enum: SINGLE, DOUBLE, etc.
+         double monthlyRent;
+         boolean isOccupied;
+         List<Guest> currentOccupants;
+     }
+     ```
+   - **RentalAgreement**:
+     ```java
+     class RentalAgreement {
+         Guest guest;
+         Room room;
+         LocalDate rentDueDate;
+         double advanceAmountPaid;
+         double monthlyRentAmount;
+
+         // Methods to check rent due date, update payment, etc.
+         void updateRentDueDate() {
+             this.rentDueDate = rentDueDate.plusMonths(1);
+         }
+     }
+     ```
+   - **Transaction**:
+     ```java
+     class Transaction {
+         String transactionId;
+         LocalDate transactionDate;
+         double amount;
+         TransactionType type;  // Enum: RENT, UTILITIES
+         Guest guest;
+     }
+     ```
+
+### 4. **Service Design**
+   - **RoomService**: Methods to manage rooms.
+     ```java
+     class RoomService {
+         List<Room> getAvailableRooms();
+         void addRoom(Room room);
+         void updateRoom(Room room);
+         void removeRoom(String roomId);
+     }
+     ```
+   - **GuestService**: Manage guest lifecycle.
+     ```java
+     class GuestService {
+         void addGuest(Guest guest);
+         void removeGuest(String guestId);
+         List<Guest> getAllGuests();
+     }
+     ```
+   - **RentalService**: Handles rent and utilities payments.
+     ```java
+     class RentalService {
+         void processRentPayment(Guest guest, double amount);
+         void calculateNextDueDate(RentalAgreement agreement);
+     }
+     ```
+   - **PaymentService**: Handles payment processing.
+     ```java
+     class PaymentService {
+         void makePayment(Guest guest, double amount, TransactionType type);
+     }
+     ```
+
+### 5. **Interaction Workflow**
+   - **When a guest joins**:
+     1. A `Guest` is created.
+     2. They are assigned a room via a `RentalAgreement`, which calculates the monthly rent and sets the first due date.
+     3. An advance rent payment is processed via the `PaymentService`.
+     4. The room’s status is updated to “occupied” in the `RoomService`.
+
+   - **Monthly rent payment**:
+     1. When the due date arrives, the system checks for unpaid rent.
+     2. The guest makes the payment via `PaymentService`, and a new transaction is logged.
+     3. The due date is updated via `RentalAgreement`.
+
+### 6. **Additional Considerations**
+   - **Notification Service**: For sending reminders to guests about rent due.
+   - **Penalty/Grace Period**: Handling late payments with optional penalties.
+   - **Security**: Ensure that payment information and sensitive guest data are securely handled.
+To handle scenarios where a room is shared by multiple occupants (e.g., a family or multiple guests) and to manage room-specific attributes such as AC or an attached kitchen, you'll need to extend your design and data model to accommodate these variations. Here’s how you can handle these cases in your low-level design (LLD):
+
+### 1. **Handle Shared Rooms and Families**
+   In your current model, a **Room** should be able to accommodate multiple guests or a family, with special rules for rent and utilities that may vary based on the number of occupants.
+
+   #### **Update Room Entity**
+   - Add a field `maxOccupancy` to indicate how many people can live in a room.
+   - Add a field `currentOccupancy` to track how many occupants are currently living in the room.
+   - Track whether the room is being rented by a **family** or **individuals**. This could impact how rent is calculated (e.g., a family might pay a fixed rent, whereas shared occupants may split the rent).
+
+   **Room Class:**
+   ```java
+   public class Room {
+       private int roomId;
+       private String roomNumber;
+       private RoomType roomType; // SINGLE, DOUBLE, SHARED
+       private boolean hasAC;
+       private boolean hasKitchen;
+       private int maxOccupancy;  // Maximum number of occupants allowed
+       private int currentOccupancy; // Current number of occupants
+       private boolean isFamilyOccupied; // True if a family is occupying the room
+
+       // Other fields and methods...
+   }
+   ```
+
+   #### **RoomService Updates**
+   - When adding or assigning a guest (or family) to a room, check if `currentOccupancy` is less than `maxOccupancy`.
+   - If a family is moving in, update `isFamilyOccupied` to `true`.
+
+   **Service Logic for Assigning Room**:
+   ```java
+   public void assignRoom(int guestId, int roomId, boolean isFamily) {
+       Room room = roomRepository.findById(roomId);
+       if (room.getCurrentOccupancy() >= room.getMaxOccupancy()) {
+           throw new RoomFullException("Room is full");
+       }
+
+       // Assign room to guest or family
+       room.setCurrentOccupancy(room.getCurrentOccupancy() + 1);
+       if (isFamily) {
+           room.setFamilyOccupied(true);
+       }
+       roomRepository.save(room);
+   }
+   ```
+
+### 2. **Room with AC or Kitchen**
+   To manage additional room features like **AC** or a **kitchen**, you can add these as boolean fields in the `Room` entity. These fields will allow you to track whether a particular room offers these amenities.
+
+   #### **AC and Kitchen Fields in Room**
+   - `hasAC`: Indicates if the room has an air conditioner.
+   - `hasKitchen`: Indicates if the room has a kitchen attached.
+
+   These attributes can affect the rent amount and utilities (e.g., rooms with AC might have higher rent or electricity bills).
+
+   **Room Class Updated**:
+   ```java
+   public class Room {
+       private int roomId;
+       private String roomNumber;
+       private RoomType roomType;
+       private boolean hasAC;      // Indicates if the room has an AC
+       private boolean hasKitchen; // Indicates if the room has a kitchen
+       private int maxOccupancy;
+       private int currentOccupancy;
+       private boolean isFamilyOccupied;
+
+       // Other fields and methods...
+   }
+   ```
+
+   #### **Impact on Rent Calculation**
+   If a room has additional features like AC or an attached kitchen, you can update the **RentalService** to calculate the rent and utility bills based on these features.
+
+   **Rent Calculation Example**:
+   ```java
+   public BigDecimal calculateRent(Room room) {
+       BigDecimal baseRent = room.getBaseRent();
+
+       // If the room has AC, increase rent by 10%
+       if (room.hasAC()) {
+           baseRent = baseRent.add(baseRent.multiply(BigDecimal.valueOf(0.1)));
+       }
+
+       // If the room has a kitchen, increase rent by 5%
+       if (room.hasKitchen()) {
+           baseRent = baseRent.add(baseRent.multiply(BigDecimal.valueOf(0.05)));
+       }
+
+       return baseRent;
+   }
+   ```
+
+### 3. **Shared Room Rent Splitting**
+   When a room is shared, rent can be split between the occupants. The logic for rent splitting can be added to the `RentalService`.
+
+   #### **Rent Splitting Logic**
+   - When a room is occupied by multiple guests (shared), each guest should pay a proportion of the rent. This could be based on an equal split or a specific arrangement.
+
+   **Rent Splitting Example**:
+   ```java
+   public BigDecimal calculateRentForSharedRoom(Room room) {
+       BigDecimal totalRent = calculateRent(room);
+
+       // If the room is shared, split rent equally among occupants
+       int numberOfGuests = room.getCurrentOccupancy();
+       if (numberOfGuests > 1) {
+           return totalRent.divide(BigDecimal.valueOf(numberOfGuests), RoundingMode.HALF_UP);
+       } else {
+           return totalRent;
+       }
+   }
+   ```
+
+   You can also customize this logic based on how you want the rent to be split (e.g., based on room type, individual agreements, etc.).
+
+### 4. **Additional Services and Utilities**
+   Since rooms with AC might have higher electricity usage, you can add utility bills accordingly:
+
+   #### **Utilities Service for Handling Extra Costs**
+   - For rooms with AC, the utility bill (electricity) might be higher, so in your **UtilitiesService**, factor in the cost of running an AC.
+
+   **Utility Bill Calculation Example**:
+   ```java
+   public BigDecimal calculateUtilityBill(Room room) {
+       BigDecimal baseUtilityBill = new BigDecimal("500"); // Base amount for utilities
+
+       // Add extra charges for rooms with AC
+       if (room.hasAC()) {
+           baseUtilityBill = baseUtilityBill.add(new BigDecimal("300")); // Extra charge for AC
+       }
+
+       return baseUtilityBill;
+   }
+   ```
+
+### 5. **Updates to Database Schema**
+   - **Room Table**:
+     Add columns like `has_ac` (boolean), `has_kitchen` (boolean), `max_occupancy`, and `current_occupancy` to the `room` table.
+   - **Guest Table**:
+     Track the number of people staying with the guest (e.g., for families).
+   - **Payment Table**:
+     Consider whether you want to track payments individually for shared rooms.
+
+### 6. **Handling Family Move-ins**
+   If a family is moving into a room, the logic for assigning rooms and calculating rent should account for:
+   - **Room occupancy limits**.
+   - **Rent for family units** (might be different from shared rooms with unrelated individuals).
+   - **Utility costs** based on the number of people or features like AC and kitchen.
+
+### Conclusion:
+By extending the core entities and services to handle families, shared rooms, and room-specific features, you can make your PG service more flexible and realistic. Here's a summary of the changes:
+- Add `maxOccupancy`, `currentOccupancy`, `hasAC`, `hasKitchen`, and `isFamilyOccupied` fields to the `Room` entity.
+- Update the logic in `RoomService` to manage shared occupancy, family assignments, and room feature tracking.
+- Ensure `RentalService` and `UtilitiesService` consider these new room attributes for rent and utility bill calculations.
+- Expand the database schema to accommodate these new attributes and relationships.
+By structuring your classes and services this way, you'll ensure a clean separation of responsibilities and maintainability in your design. You can further refine it with design patterns like the **Factory Pattern** for room creation or the **Observer Pattern** for rent due notifications.

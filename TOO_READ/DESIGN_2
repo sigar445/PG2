@@ -1,0 +1,114 @@
+You're on the right track! Structuring a PG management system involves a clear delineation of services and functionalities. Here's a high-level approach to the Low-Level Design (LLD):
+
+Services and Modules
+Room Service:
+
+Add Room
+
+Remove Room
+
+Update Room
+
+Retrieve Room Details
+
+Rental Service:
+
+Pay Rent
+
+Pay Utilities
+
+View Payment History
+
+Generate Invoice
+
+Guest Service:
+
+Add Guest
+
+Remove Guest
+
+Update Guest Details
+
+Notice Period Management
+
+Entities
+Room: Represents individual rooms. Attributes might include room number, type, occupancy status, rate, etc.
+
+Guest: Represents occupants. Attributes include guest ID, name, contact details, check-in/check-out dates, etc.
+
+Rent: Represents payment records. Attributes include payment ID, guest ID, room ID, amount, date of payment, etc.
+
+Utility: Represents utility payments. Attributes include utility ID, type, amount, due date, etc.
+
+Invoice: Represents billing details for rent and utilities.
+
+Example Class Design
+java
+
+Copy
+public class Room {
+    private String roomNumber;
+    private String type;
+    private boolean isOccupied;
+    private double rate;
+    // Constructors, Getters, Setters
+}
+
+public class Guest {
+    private String guestId;
+    private String name;
+    private String contactDetails;
+    private LocalDate checkInDate;
+    private LocalDate checkOutDate;
+    // Constructors, Getters, Setters
+}
+
+public class Rent {
+    private String paymentId;
+    private String guestId;
+    private String roomId;
+    private double amount;
+    private LocalDate paymentDate;
+    // Constructors, Getters, Setters
+}
+
+public class Utility {
+    private String utilityId;
+    private String type;
+    private double amount;
+    private LocalDate dueDate;
+    // Constructors, Getters, Setters
+}
+
+public class Invoice {
+    private String invoiceId;
+    private String guestId;
+    private double totalAmount;
+    private LocalDate invoiceDate;
+    // Constructors, Getters, Setters
+}
+Service Methods
+java
+
+Copy
+public interface RoomService {
+    void addRoom(Room room);
+    void removeRoom(String roomNumber);
+    void updateRoom(Room room);
+    Room getRoomDetails(String roomNumber);
+}
+
+public interface RentalService {
+    void payRent(Rent rent);
+    void payUtility(Utility utility);
+    List<Rent> getPaymentHistory(String guestId);
+    Invoice generateInvoice(String guestId);
+}
+
+public interface GuestService {
+    void addGuest(Guest guest);
+    void removeGuest(String guestId);
+    void updateGuest(Guest guest);
+    void manageNoticePeriod(String guestId);
+}
+This LLD approach should give you a robust foundation for managing the different aspects of your PG service efficiently. Happy designing! 🛠️

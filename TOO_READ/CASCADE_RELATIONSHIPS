@@ -1,0 +1,39 @@
+The `@OneToMany` annotation in JPA is used to define a one-to-many relationship between two entities, in this case, `Room` and `Guest`. The attributes `cascade` and `fetch` control how this relationship behaves in terms of data operations and fetching strategies.
+
+### Breakdown of `@OneToMany` Attributes
+
+1. **mappedBy**:
+   - This attribute specifies the field in the `Guest` entity that owns the relationship. In this example, it tells JPA that the `room` field in the `Guest` class refers to the `Room` class.
+
+2. **cascade**:
+   - The `cascade` attribute defines how operations performed on the parent entity (`Room`) will cascade to the child entities (`Guest`).
+   - Common cascade types include:
+     - **CascadeType.PERSIST**: When you save a `Room`, the associated `Guest` entities will also be saved.
+     - **CascadeType.MERGE**: When you update a `Room`, the associated `Guest` entities will also be updated.
+     - **CascadeType.REMOVE**: When you delete a `Room`, the associated `Guest` entities will also be deleted.
+     - **CascadeType.ALL**: This includes all the above operations. It's useful when you want to ensure that all related entities are managed automatically.
+   - **When to use which**:
+     - Use `CascadeType.PERSIST` when you want to save the child entities only when saving the parent.
+     - Use `CascadeType.REMOVE` when you want to delete child entities when the parent is deleted. Be careful with this option, as it can lead to data loss if used improperly.
+     - Use `CascadeType.ALL` for comprehensive management, but ensure that the lifecycle of the parent and child entities are tightly coupled, as changes to one will affect the other.
+
+3. **fetch**:
+   - The `fetch` attribute specifies how the related entities should be loaded from the database.
+   - Common fetch strategies:
+     - **FetchType.LAZY**: This means that the associated entities (in this case, `Guest` entities) are not loaded from the database until they are explicitly accessed. This can improve performance by avoiding unnecessary data loading when you only need the `Room` data.
+     - **FetchType.EAGER**: This means that the associated entities are loaded immediately when the parent entity is loaded. This can be useful when you know you'll always need the associated data but can lead to performance issues if you have many associations and load more data than necessary.
+   - **When to use which**:
+     - Use `FetchType.LAZY` when you expect that the child entities are not always needed, and you want to optimize performance.
+     - Use `FetchType.EAGER` when you know that the child entities will be required every time you load the parent entity.
+
+### Example Summary:
+```java
+@OneToMany(mappedBy = "room", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+private List<Guest> currentOccupants = new ArrayList<>();
+```
+- **`mappedBy = "room"`**: Indicates that the `Guest` entity has the `room` field that maps this relationship.
+- **`cascade = CascadeType.ALL`**: All operations (like save, update, delete) on `Room` will also be performed on associated `Guest` entities.
+- **`fetch = FetchType.LAZY`**: `Guest` entities will only be loaded when accessed, which can help optimize performance.
+
+### Conclusion:
+Choosing the right cascade type and fetch strategy is crucial for the performance and integrity of your application. Always consider the relationships between your entities and how you plan to use them when making these decisions. If the parent and child entities are closely tied in your application's logic, cascading and eager fetching might be appropriate. If they're more loosely related, lazy fetching and selective cascading may be better to avoid unnecessary data loading and operations.

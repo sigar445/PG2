@@ -1,0 +1,295 @@
+To ensure that when a guest is removed via the `GuestService`, they are also removed from the `Room` they are associated with, you need to update both the `Guest` and the `Room` entities. Specifically, the `Guest` must be removed from the `guests` list of the corresponding `Room` before deleting the `Guest`.
+
+Here’s how you can modify your `GuestService` to achieve this:
+
+### 1. **Remove Guest from Room's Guest List:**
+Before deleting the guest, you need to remove the guest from the associated room.
+
+```java
+@Service
+public class GuestService {
+    private final GuestRepository guestRepository;
+    private final RoomRepository roomRepository;
+
+    @Autowired
+    public GuestService(GuestRepository guestRepository, RoomRepository roomRepository) {
+        this.guestRepository = guestRepository;
+        this.roomRepository = roomRepository;
+    }
+
+    public List<GuestResponseDTO> getAllGuests() {
+        return DTOConverter.covertToGuestDTO(guestRepository.findAll());
+    }
+
+    public Guest addGuest(Guest guest) {
+        return guestRepository.saveAndFlush(guest);
+    }
+
+    public boolean removeGuest(Long guestId) {
+        Optional<Guest> guestOptional = guestRepository.findById(guestId);
+
+        if (guestOptional.isEmpty()) {
+            return false;  // Guest not found
+        }
+
+        Guest guest = guestOptional.get();
+        Room room = guest.getRoom();  // Get the room associated with the guest
+
+        if (room != null) {
+            room.getGuests().remove(guest);  // Remove guest from the room's guest list
+            roomRepository.save(room);  // Save the updated room
+        }
+
+        guestRepository.deleteById(guestId);  // Now delete the guest
+        return true;
+    }
+}
+```
+
+### Key Changes:
+1. **Find Associated Room**:
+   - Retrieve the `Room` associated with the `Guest` via `guest.getRoom()`.
+
+2. **Remove Guest from Room's List**:
+   - Remove the guest from the room's `guests` list: `room.getGuests().remove(guest)`.
+
+3. **Save the Updated Room**:
+   - After modifying the room's `guests` list, save the room back to the repository using `roomRepository.save(room)`.
+
+4. **Delete Guest**:
+   - After updating the `Room`, proceed to delete the guest using `guestRepository.deleteById(guestId)`.
+
+### 2. **Room Entity Adjustments**:
+Ensure that the `Room` entity is correctly set up to allow bi-directional removal:
+
+```java
+public void removeGuest(Guest guest) {
+    this.guests.remove(guest);
+    guest.setRoom(null);  // Disassociate guest from room
+}
+```
+
+### 3. **Controller Layer**:
+The controller can remain unchanged, as the service now handles both the removal of the guest and the update to the room.
+
+### Flow:
+- **Find Guest**: Check if the guest exists.
+- **Remove from Room**: If the guest exists and is associated with a room, remove them from the room's `guests` list.
+- **Save Room**: Persist the changes to the room in the database.
+- **Delete Guest**: Remove the guest from the database.
+
+This ensures consistency between the `Room` and `Guest` entities in the
+database, maintaining referential integrity when a guest is deleted.
+Yes, you can refactor the logic to avoid having both repositories in a single service by delegating the responsibility of managing the `Room` to the `RoomService`. This way, each service (i.e., `GuestService` and `RoomService`) will only be responsible for its own entity, maintaining a clear separation of concerns.
+
+Here’s how you can implement this:
+
+### 1. **GuestService**:
+The `GuestService` will only handle the `Guest` entity and delegate any room-related operations to the `RoomService`.
+
+```java
+@Service
+public class GuestService {
+
+    private final GuestRepository guestRepository;
+    private final RoomService roomService;  // Inject the RoomService
+
+    @Autowired
+    public GuestService(GuestRepository guestRepository, RoomService roomService) {
+        this.guestRepository = guestRepository;
+        this.roomService = roomService;  // RoomService to handle room-related operations
+    }
+
+    public List<GuestResponseDTO> getAllGuests() {
+        return DTOConverter.covertToGuestDTO(guestRepository.findAll());
+    }
+
+    public Guest addGuest(Guest guest) {
+        return guestRepository.saveAndFlush(guest);
+    }
+
+    public boolean removeGuest(Long guestId) {
+        Optional<Guest> guestOptional = guestRepository.findById(guestId);
+
+        if (guestOptional.isEmpty()) {
+            return false;  // Guest not found
+        }
+
+        Guest guest = guestOptional.get();
+
+        // Delegate the removal of the guest from the room to the RoomService
+        if (guest.getRoom() != null) {
+            roomService.removeGuestFromRoom(guest);  // Call RoomService to handle room updates
+        }
+
+        guestRepository.deleteById(guestId);  // Now delete the guest
+        return true;
+    }
+}
+```
+
+### 2. **RoomService**:
+The `RoomService` will handle the logic for managing the `Room` entity, including removing a `Guest` from the room.
+
+```java
+@Service
+public class RoomService {
+
+    private final RoomRepository roomRepository;
+
+    @Autowired
+    public RoomService(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
+
+    public void removeGuestFromRoom(Guest guest) {
+        Room room = guest.getRoom();
+
+        if (room != null) {
+            room.getGuests().remove(guest);  // Remove the guest from the room
+            roomRepository.save(room);  // Save the updated room
+        }
+
+        // Optionally, you can clear the guest's reference to the room as well
+        guest.setRoom(null);
+    }
+}
+```
+
+### 3. **Controller Layer**:
+The controller remains the same, as it will still interact with the `GuestService`.
+
+### Explanation:
+- **GuestService** now only handles guest-specific operations, but when a guest is associated with a room, it delegates the task of modifying the room to `RoomService`.
+- **RoomService** takes care of managing room-related operations, such as removing a guest from the `guests` list and saving the updated room.
+
+### Flow:
+1. The **GuestService** checks whether the guest exists.
+2. If the guest is found and associated with a room, it delegates the operation to **RoomService** to handle the removal of the guest from the room.
+3. **RoomService** updates the `Room` and saves the changes.
+4. **GuestService** proceeds to delete the guest after the room has been updated.
+
+### Benefits:
+- **Separation of Concerns**: Each service is responsible for its own entity (Guest in `GuestService` and Room in `RoomService`).
+- **Delegation**: The `GuestService` delegates the room-related operations to `RoomService`, keeping the logic clean and focused.
+- **Reusability**: If you need to manipulate guests within rooms elsewhere, you can reuse the `removeGuestFromRoom()` logic in `RoomService`.
+The decision on where to place the logic for removing guests and rooms depends on how tightly coupled you want the operations to be and how you envision your application's architecture. Here’s a breakdown of the logic, considering both perspectives.
+
+### Perspective 1: Delegate Guest Removal to RoomService
+
+If you want to keep room-related logic centralized, you could delegate the logic of removing guests from rooms directly to `RoomService`. This approach can simplify the `GuestService` and make it easier to manage dependencies.
+
+#### **1. RoomService**: Handling Guest Removal
+In this scenario, the `RoomService` would be responsible for removing guests from rooms, as the operation is related to the state of a room.
+
+```java
+@Service
+public class RoomService {
+
+    private final RoomRepository roomRepository;
+
+    @Autowired
+    public RoomService(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
+
+    public boolean removeGuestFromRoom(Long guestId) {
+        Optional<Guest> guestOptional = guestRepository.findById(guestId);
+
+        if (guestOptional.isPresent()) {
+            Guest guest = guestOptional.get();
+            Room room = guest.getRoom();
+
+            if (room != null) {
+                room.getGuests().remove(guest);  // Remove guest from room's list
+                guest.setRoom(null);  // Optionally disassociate guest from room
+                roomRepository.save(room);  // Save changes to room
+            }
+
+            guestRepository.deleteById(guestId);  // Finally delete the guest
+            return true;
+        }
+
+        return false;  // Guest not found
+    }
+}
+```
+
+#### **2. GuestService**: Delegating the Removal
+The `GuestService` would call the `RoomService` to remove a guest.
+
+```java
+@Service
+public class GuestService {
+
+    private final GuestRepository guestRepository;
+    private final RoomService roomService;  // Inject RoomService
+
+    @Autowired
+    public GuestService(GuestRepository guestRepository, RoomService roomService) {
+        this.guestRepository = guestRepository;
+        this.roomService = roomService;
+    }
+
+    public boolean removeGuest(Long guestId) {
+        return roomService.removeGuestFromRoom(guestId);  // Delegate to RoomService
+    }
+}
+```
+
+### Perspective 2: Handle Room and Guest Removal Together
+
+If you want to handle the removal of both rooms and guests in a more intertwined manner (e.g., when a room is deleted, all associated guests should be removed), you can create logic in the `RoomService` to manage the removal of guests when a room is deleted.
+
+#### **1. RoomService**: Remove Room and Guests
+
+```java
+@Service
+public class RoomService {
+
+    private final RoomRepository roomRepository;
+    private final GuestRepository guestRepository;
+
+    @Autowired
+    public RoomService(RoomRepository roomRepository, GuestRepository guestRepository) {
+        this.roomRepository = roomRepository;
+        this.guestRepository = guestRepository;  // Inject GuestRepository
+    }
+
+    public boolean removeRoom(Long roomId) {
+        Optional<Room> roomOptional = roomRepository.findById(roomId);
+
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            List<Guest> guests = room.getGuests();  // Get all guests in the room
+
+            // Remove each guest associated with the room
+            for (Guest guest : guests) {
+                guest.setRoom(null);  // Disassociate guest from room
+                guestRepository.delete(guest);  // Optionally delete guest
+            }
+
+            roomRepository.delete(room);  // Now delete the room
+            return true;
+        }
+
+        return false;  // Room not found
+    }
+}
+```
+
+### Summary of Approaches
+1. **Delegate Guest Removal to RoomService**:
+   - **Pros**: Centralizes the logic for managing guests within rooms, making the `GuestService` simpler. Changes related to rooms and guests are managed in one place.
+   - **Cons**: May lead to circular dependencies if not carefully managed, especially if both services need to reference each other.
+
+2. **Handle Removal in RoomService**:
+   - **Pros**: Provides clear logic for what happens when a room is deleted (removing guests). It helps maintain referential integrity.
+   - **Cons**: Might require more coordination between services if they are handling many intertwined operations.
+
+### Best Practices:
+- **Separation of Concerns**: Each service should focus on its own entity, but it’s acceptable to have them interact when necessary. For example, `RoomService` can handle guests that belong to rooms.
+- **Transactional Integrity**: Consider using transactions (e.g., `@Transactional`) to ensure that both guest and room deletions are consistent.
+- **Maintainability**: Choose an approach that makes it easy to understand the flow of your application and makes it maintainable in the long run.
+
+Ultimately, the choice depends on how you want to structure your application and what makes sense for your specific use case. Both approaches can work effectively if designed thoughtfully.

@@ -1,0 +1,102 @@
+[
+  {
+    "guestId": 1,
+    "name": "John Doe",
+    "age": 30,
+    "roomId": 1,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-18"
+  },
+  {
+    "guestId": 2,
+    "name": "Doe",
+    "age": 30,
+    "roomId": 2,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-25"
+  },
+  {
+    "guestId": 3,
+    "name": "Daman",
+    "age": 30,
+    "roomId": 3,
+    "roomNumber": 202,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-21"
+  },
+  {
+    "guestId": 4,
+    "name": "mandy",
+    "age": 30,
+    "roomId": 3,
+    "roomNumber": 202,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-02"
+  },
+  {
+    "guestId": 5,
+    "name": "sandy",
+    "age": 20,
+    "roomId": 3,
+    "roomNumber": 202,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-02"
+  },
+  {
+    "guestId": 6,
+    "name": "tammy",
+    "age": 40,
+    "roomId": 1,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-05"
+  },
+  {
+    "guestId": 7,
+    "name": "luffy",
+    "age": 50,
+    "roomId": 2,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-15"
+  },
+  {
+    "guestId": 8,
+    "name": "ffy",
+    "age": 54,
+    "roomId": 1,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "9876543210",
+    "dateOfOccupancy": "2024-10-11"
+  },
+  {
+    "guestId": 9,
+    "name": "sky",
+    "age": 32,
+    "roomId": 1,
+    "roomNumber": 201,
+    "floor": 2,
+    "phoneNumber": "2342323423",
+    "dateOfOccupancy": "2023-10-20"
+  },
+  {
+    "guestId": 10,
+    "name": "sky",
+    "age": 32,
+    "roomId": 3,
+    "roomNumber": 202,
+    "floor": 2,
+    "phoneNumber": "2342323423",
+    "dateOfOccupancy": "2023-10-20"
+  }
+]

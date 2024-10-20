@@ -1,0 +1,48 @@
+When using the H2 database with Spring Boot, you'll need to configure `application.properties` to enable the in-memory database. H2 is often used for testing or development purposes since it's lightweight and doesn't require an external database server.
+
+Here’s how to configure the H2 database in your `application.properties`:
+
+### Example `application.properties` for H2 Database:
+
+```properties
+# H2 Database configuration
+spring.datasource.url=jdbc:h2:mem:testdb  # In-memory database
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa  # Default username
+spring.datasource.password=  # Default password is empty
+
+# H2 Console configuration (optional, for accessing the H2 web console)
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console  # You can change the console path if needed
+
+# Hibernate DDL auto configuration for managing schema
+spring.jpa.hibernate.ddl-auto=update  # Can be update | create | create-drop | validate
+
+# Show SQL statements in the log
+spring.jpa.show-sql=true
+
+# Optional: Format SQL for readability
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+### Key Properties:
+- `spring.datasource.url=jdbc:h2:mem:testdb`: This sets up an **in-memory H2 database** that is created when the application starts and destroyed when it stops. You can use `jdbc:h2:file:./data/testdb` for a persistent file-based H2 database.
+- `spring.h2.console.enabled=true`: This enables the H2 web console, which can be accessed via the browser for debugging. You can access it by navigating to `http://localhost:8080/h2-console` in your browser.
+- `spring.jpa.hibernate.ddl-auto=update`: Hibernate automatically manages the schema based on the entities. For production environments, avoid `update` or `create-drop`.
+
+### Accessing H2 Console:
+After starting the Spring Boot application, you can access the H2 database via the H2 Console at `http://localhost:8080/h2-console`. Use the following credentials:
+- **JDBC URL**: `jdbc:h2:mem:testdb`
+- **Username**: `sa`
+- **Password**: (leave it blank)
+
+### If you want a file-based H2 database (persistent storage):
+
+```properties
+spring.datasource.url=jdbc:h2:file:./data/testdb  # File-based H2 database
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+```
+
+This setup will store the database in the `data/testdb` file, which will persist even after the application is stopped.

@@ -1,0 +1,155 @@
+To implement the logic for finding all guests who have paid their rents before the due date, as well as those who are pending payments, you'll need to follow a structured approach. This involves making changes to the relevant repositories, services, models, and possibly creating new DTOs (Data Transfer Objects) for better data handling. Below are the steps to achieve this functionality:
+
+### Step 1: Update `RentalAgreement` Model
+
+First, ensure that your `RentalAgreement` model includes a way to track the payment status. You might want to add a `boolean` field for tracking payment completion or a specific field for the payment date.
+
+```java
+@Entity
+public class RentalAgreement {
+
+    @OneToOne
+    @JoinColumn(name = "room_id")
+    private Room room;
+
+    @OneToOne
+    @JoinColumn(name = "guest_id")
+    private Guest guest;
+
+    private int rent;
+    private int advanceAmountPaid;
+    private LocalDate rentDueDate;
+    private double monthlyRentAmount;
+
+    // New field to track payment status
+    private LocalDate paymentDate; // This indicates when the payment was made
+
+    // Method to check rent due date, update payment, etc.
+    public void updateRentDueDate() {
+        this.rentDueDate = rentDueDate.plusMonths(1);
+    }
+
+    // Method to check if rent is paid
+    public boolean isRentPaid() {
+        return paymentDate != null && paymentDate.isBefore(rentDueDate);
+    }
+}
+```
+
+### Step 2: Update the `RentalAgreementRepository`
+
+Add methods to find guests who have paid their rents before the due date and those who are pending payments.
+
+```java
+public interface RentalAgreementRepository extends JpaRepository<RentalAgreement, Long> {
+
+    List<RentalAgreement> findByPaymentDateBeforeAndRentDueDateBefore(LocalDate paymentDate, LocalDate dueDate);
+
+    List<RentalAgreement> findByPaymentDateIsNullOrPaymentDateAfter(LocalDate dueDate);
+
+    // Existing methods
+    List<RentalAgreement> findByRoom(Room room);
+    List<RentalAgreement> findByRoom_RoomNumber(int roomNumber);
+    List<RentalAgreement> findByGuest(Guest guest);
+    List<RentalAgreement> findByGuest_Name(String guestName);
+}
+```
+
+### Step 3: Create a Service Layer Method
+
+Create methods in your service layer to use the repository methods to get the desired results.
+
+```java
+@Service
+public class RentalAgreementService {
+
+    @Autowired
+    private RentalAgreementRepository rentalAgreementRepository;
+
+    // Method to find guests who have paid their rents before the due date
+    public List<Guest> findGuestsPaidBeforeDueDate() {
+        LocalDate currentDate = LocalDate.now();
+        List<RentalAgreement> paidAgreements = rentalAgreementRepository.findByPaymentDateBeforeAndRentDueDateBefore(currentDate, currentDate);
+
+        return paidAgreements.stream()
+                .map(RentalAgreement::getGuest)
+                .collect(Collectors.toList());
+    }
+
+    // Method to find guests whose rent is pending
+    public List<Guest> findGuestsPendingRent() {
+        LocalDate currentDate = LocalDate.now();
+        List<RentalAgreement> pendingAgreements = rentalAgreementRepository.findByPaymentDateIsNullOrPaymentDateAfter(currentDate);
+
+        return pendingAgreements.stream()
+                .map(RentalAgreement::getGuest)
+                .collect(Collectors.toList());
+    }
+}
+```
+
+### Step 4: Create a Controller
+
+If you are using a RESTful API, you will likely want to create endpoints for these operations.
+
+```java
+@RestController
+@RequestMapping("/api/rental-agreements")
+public class RentalAgreementController {
+
+    @Autowired
+    private RentalAgreementService rentalAgreementService;
+
+    @GetMapping("/guests-paid-before-due-date")
+    public ResponseEntity<List<Guest>> getGuestsPaidBeforeDueDate() {
+        List<Guest> guests = rentalAgreementService.findGuestsPaidBeforeDueDate();
+        return ResponseEntity.ok(guests);
+    }
+
+    @GetMapping("/guests-pending-rent")
+    public ResponseEntity<List<Guest>> getGuestsPendingRent() {
+        List<Guest> guests = rentalAgreementService.findGuestsPendingRent();
+        return ResponseEntity.ok(guests);
+    }
+}
+```
+
+### Step 5: Update Your Guest Model (Optional)
+
+If you want to enhance the `Guest` model with a method to check if they have outstanding rent, you can add a method to it as well:
+
+```java
+public class Guest {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private long guestId;
+
+    private String name;
+    private String address;
+    private byte age;
+
+    @Column(length = 20)
+    private String phoneNumber;
+
+    private LocalDate dateOfOccupancy;
+
+    @ManyToOne
+    @JoinColumn(name = "room_id", nullable = false, unique = true)
+    private Room room;
+
+    // Method to check if guest has pending rent
+    public boolean hasPendingRent(RentalAgreement agreement) {
+        return agreement.getPaymentDate() == null || agreement.getPaymentDate().isAfter(agreement.getRentDueDate());
+    }
+}
+```
+
+### Summary
+
+- **Model Updates**: Added fields to `RentalAgreement` for payment tracking.
+- **Repository Methods**: Created methods to find guests based on their payment status.
+- **Service Logic**: Implemented logic to retrieve guests based on their rent payment status.
+- **Controller**: Exposed endpoints for the service methods to allow API access.
+
+This structure will help you efficiently manage rental agreements and track payment statuses while keeping your code organized and scalable.

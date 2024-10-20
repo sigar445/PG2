@@ -1,0 +1,172 @@
+A high-level design (HLD) for the Paying Guest (PG) service would break down the system into key components, their interactions, and the overall architecture. This HLD focuses on the core features of the service and outlines how modern technologies like microservices, databases, caching, and load balancing fit into the architecture.
+
+### Key Components of the HLD
+The system is split into various microservices that handle different domains of the PG service. Below are the components, services, and technology choices:
+
+---
+
+### 1. **Room Management Service**
+   - **Responsibilities**: Manage room details (e.g., room type, capacity, availability, AC, kitchen), add/remove rooms, and assign guests to rooms.
+   - **Database**:
+     - PostgreSQL (Rooms, AC/Kitchen attributes, Guest assignments)
+   - **APIs**:
+     - `addRoom()`, `updateRoom()`, `deleteRoom()`, `getAvailableRooms()`, `assignGuestToRoom()`
+   - **Scaling**: Horizontally scalable, especially during high traffic for room bookings.
+
+### 2. **Guest Management Service**
+   - **Responsibilities**: Manage guest details, check-in/check-out process, manage notices (e.g., one-month notice), track family and individual guest data.
+   - **Database**:
+     - PostgreSQL (Guest profiles, Family/individual guest relationship mapping)
+   - **APIs**:
+     - `addGuest()`, `removeGuest()`, `updateGuest()`, `getGuestDetails()`
+   - **Caching**:
+     - Redis (for guest lookup and frequently queried data).
+
+### 3. **Rental and Payment Service**
+   - **Responsibilities**: Track rent payments, utilities, generate invoices, integrate with payment gateways.
+   - **Database**:
+     - PostgreSQL (Rent payment history, utilities, payment details)
+   - **APIs**:
+     - `payRent()`, `getRentDetails()`, `payUtilities()`, `getUtilitiesDetails()`
+   - **Payment Gateway Integration**:
+     - Integrates with external systems like Stripe, Razorpay.
+   - **Concurrency**:
+     - Optimistic locking for payment transactions, ensuring no double payments.
+   - **Event Handling**:
+     - Kafka or RabbitMQ to trigger notification events after payment completion.
+
+### 4. **Maintenance Service**
+   - **Responsibilities**: Handle guest-submitted maintenance requests, track status, and manage room services.
+   - **Database**:
+     - MongoDB (Unstructured data for maintenance history, request details)
+   - **APIs**:
+     - `createRequest()`, `updateRequestStatus()`, `getRequestDetails()`
+   - **Real-Time Notifications**:
+     - Use WebSockets to push maintenance request updates to the guest UI in real-time.
+
+### 5. **Notification Service**
+   - **Responsibilities**: Send notifications for rent due dates, payment receipts, maintenance alerts, check-in/out reminders.
+   - **Integration**:
+     - Twilio (for SMS), Email, Push notifications.
+   - **Event-Driven Architecture**:
+     - Kafka to subscribe to events like rent payment completion or maintenance updates and send corresponding notifications.
+
+### 6. **Booking Service (Optional)**
+   - **Responsibilities**: Allow prospective guests to book rooms in advance.
+   - **Database**:
+     - PostgreSQL (Booking records)
+   - **APIs**:
+     - `createBooking()`, `getBookingDetails()`, `cancelBooking()`
+
+### 7. **Authentication & Authorization Service**
+   - **Responsibilities**: Handle user registration, authentication, and role-based access control (admin vs guest).
+   - **APIs**:
+     - `register()`, `login()`, `getRoles()`
+   - **Authentication**:
+     - OAuth2 / JWT tokens for securing APIs and ensuring secure guest sessions.
+   - **Role-Based Access**:
+     - Admins can manage rooms, guests, and payments, while guests can manage their profiles and payments.
+
+### 8. **API Gateway & Load Balancing**
+   - **Responsibilities**: Central point of access for all microservices, API routing, load balancing.
+   - **Technology**:
+     - **NGINX** for load balancing requests across multiple instances of services.
+     - **API Gateway** (e.g., Kong or Spring Cloud Gateway) to manage routing, rate-limiting, and security.
+
+### 9. **Cache Layer**
+   - **Technology**:
+     - **Redis** for caching frequently accessed data like room availability, guest details, rent amounts, and payment statuses.
+   - **Caching Strategies**:
+     - **Write-Through Cache** for rent details.
+     - **Cache Invalidation**: Ensure consistency by invalidating the cache on room booking or payment updates.
+
+### 10. **Event-Driven Messaging Layer**
+   - **Technology**:
+     - **Apache Kafka** or **RabbitMQ** for event-driven communication between services (e.g., notifying the notification service about rent payment completion).
+   - **Usage**:
+     - For decoupling services (e.g., a payment event triggers the notification service without direct coupling).
+
+### 11. **Service Discovery & Configuration Management**
+   - **Technology**:
+     - **Zookeeper** or **Consul** for service discovery and dynamic service registration.
+     - **Spring Cloud Config** or **HashiCorp Vault** for centralized configuration management (e.g., managing API secrets, DB credentials).
+
+---
+
+### Overall System Architecture (Component Interaction)
+
+1. **Frontend** (React, Angular, or Vue.js):
+   - User interfaces for guests and admins:
+     - **Admin Dashboard**: Manage rooms, guests, payments, and maintenance requests.
+     - **Guest Portal**: View room details, pay rent, track maintenance requests, manage their stay.
+   - **Communication**: Frontend interacts with the backend via the **API Gateway**.
+
+2. **API Gateway** (Kong or NGINX):
+   - Routes all frontend requests to the appropriate microservice.
+   - Acts as a single entry point for all client requests.
+
+3. **Microservices Layer**:
+   - Separate microservices for Room Management, Guest Management, Rental/Payment, and Notifications.
+   - All services communicate asynchronously via **Kafka/RabbitMQ** to ensure decoupling.
+
+4. **Data Storage**:
+   - **PostgreSQL** is used as the main database for structured data (Rooms, Guests, Payments).
+   - **MongoDB** stores unstructured data (Maintenance logs).
+   - **Redis** caches frequently accessed data (Room availability, Guest details).
+
+5. **Service Discovery & Configuration**:
+   - **Zookeeper/Consul** helps microservices discover each other dynamically (scalable and fault-tolerant).
+
+6. **Payment Gateway**:
+   - Integrates with **external payment systems** (Stripe, Razorpay) for processing payments.
+
+---
+
+### High-Level Sequence Diagram (Example for Rent Payment Process)
+
+1. **Guest** logs into the portal and views pending rent details.
+2. **Frontend** sends a rent payment request via the **API Gateway** to the **RentalService**.
+3. **RentalService** verifies rent details, updates the rent payment status in the database, and triggers an event on **Kafka** (e.g., payment completion).
+4. **NotificationService** listens to the event, sends a rent payment receipt to the guest via SMS/email.
+5. **Redis Cache** updates the rent status to reflect the latest information.
+
+---
+
+### High-Level Deployment Architecture
+
+1. **Frontend**: Deployed on a CDN (Content Delivery Network) to deliver the UI quickly.
+2. **API Gateway (NGINX/Kong)**: Acts as the main entry point for all client requests. Load balances the traffic to the appropriate microservices.
+3. **Microservices**: Each microservice runs on separate containers or servers (Kubernetes, Docker Swarm, or standalone VMs).
+4. **Zookeeper/Consul**: Deployed as a cluster to provide service discovery and configuration management.
+5. **Redis Cache**: Deployed separately for caching frequently accessed data.
+6. **PostgreSQL/MongoDB**: Deployed in a master-slave configuration for high availability and horizontal scalability.
+7. **Kafka/RabbitMQ**: Deployed in a clustered setup for distributed event-driven communication.
+8. **NGINX**: Acts as a load balancer in front of the API Gateway and microservices.
+
+---
+
+### Modern Design Considerations
+
+1. **Scalability**: Microservices architecture allows each service to be scaled independently (e.g., room management during peak booking times).
+2. **Concurrency**: Use optimistic locking or Zookeeper to handle concurrent updates (e.g., room availability or rent payments).
+3. **High Availability**: Use database replication, Redis for caching, and microservice clustering (Kubernetes) for fault tolerance and high availability.
+4. **Security**: Implement OAuth2 or JWT for secure access to APIs. Secure payment integration via trusted gateways (Stripe).
+5. **Logging & Monitoring**: Use **ELK stack (Elasticsearch, Logstash, Kibana)** or **Prometheus + Grafana** for monitoring, logging, and alerting.
+
+---
+
+### UI Considerations
+
+- **Admin Dashboard**:
+  - Manage rooms, guests, payments, and view maintenance requests.
+  - Use modern UI frameworks (React/Angular) for a responsive and interactive interface.
+
+- **Guest Portal**:
+  - Allow guests to view room details, pay rent, track maintenance issues, and get notifications.
+  - Use responsive design for cross-device compatibility (PC, mobile).
+
+---
+
+This HLD provides a strong foundation for building a modern, scalable, and maintain
+
+able PG service system using a microservices architecture, appropriate databases, caching strategies, and event-driven communication. The design ensures flexibility, resilience, and ease of scaling as the PG service grows.

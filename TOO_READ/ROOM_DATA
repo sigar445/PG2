@@ -1,0 +1,9 @@
+{
+  "roomNumber": 301,
+  "floor": 3,
+  "hasKitchen": false,
+  "hasAC": true,
+  "isAvailable": true,
+  "rent": 15000,
+  "beds": "DOUBLE"
+}
