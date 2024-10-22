@@ -20,11 +20,13 @@ public class Room {
     @GeneratedValue(strategy =  GenerationType.IDENTITY)
     @Column(name = "room_id")
     private long roomId;
-
+// change int to Integer todo
     private int roomNumber;
     private int floor;
     private boolean hasKitchen;
     private boolean hasAC;
+
+    // have to define property as everything started with "is" treated differently
     @JsonProperty("isAvailable")
     private boolean isAvailable;
     private Integer rent;

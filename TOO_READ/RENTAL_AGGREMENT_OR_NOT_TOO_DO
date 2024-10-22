@@ -1,0 +1,42 @@
+In practice, whether you should use a dedicated `RentalAgreement` (or `RentalContract`) entity or handle rent logic within the `Guest` entity depends on several factors related to your system's complexity, maintainability, and industry practices. Both approaches are valid, but the choice often comes down to system architecture needs and business requirements.
+
+### 1. **Using `RentalAgreement`**:
+This approach is more aligned with the **Single Responsibility Principle (SRP)**, which is an industry standard for designing modular, maintainable systems. Here's why it makes sense in many cases:
+
+#### **Advantages of Using `RentalAgreement`:**
+- **Clear Separation of Concerns**: The `Guest` entity focuses solely on guest-related details, while the `RentalAgreement` handles contract-related aspects such as rent amounts, due dates, and terms. This separation avoids bloating the `Guest` entity with unrelated responsibilities.
+- **Better Scalability**: If the rental logic grows in complexity (e.g., multiple contract types, dynamic rent changes, various penalties or discounts, etc.), managing this logic in a separate `RentalAgreement` class keeps the system modular and easier to extend.
+- **Flexibility for Future Features**: If your application is likely to evolve (e.g., multiple rental agreements for a single guest, contracts with different terms, or leasing options), keeping a `RentalAgreement` entity is more flexible for future changes.
+- **Industry Standard for Complex Systems**: For more complex systems, such as real estate management or tenant management systems, using a contract or agreement entity is the industry norm. This entity encapsulates the business logic related to leases or contracts (rent amounts, payment schedules, and any contract-specific details).
+
+#### **Disadvantages**:
+- **Overhead for Simple Systems**: If your system is relatively simple and won't scale in complexity, introducing a `RentalAgreement` might feel like an unnecessary overhead.
+- **Extra Entity to Manage**: You'll need to manage relationships and ensure data integrity across more entities, which adds to the complexity in smaller systems.
+
+### 2. **Handling Rent Logic in `Guest`**:
+This approach works well for simpler systems where the rental agreement doesn't change or grow in complexity over time.
+
+#### **Advantages of Keeping Rent Logic in `Guest`:**
+- **Simplicity**: If you have a simple system with fixed rent structures, this approach avoids the complexity of maintaining additional entities. Everything related to a guest (rent, room, payments) is encapsulated within the `Guest` entity.
+- **Less Boilerplate Code**: Fewer entities mean less code for managing relationships, mappings, and cascading operations.
+- **Faster Development**: For smaller applications or MVPs, handling everything in the `Guest` entity could lead to faster development times since there is less structure to manage.
+
+#### **Disadvantages**:
+- **Violation of SRP**: Combining guest-related data (e.g., name, address) with rental-specific data (e.g., rent, due dates) can violate the SRP, making the `Guest` entity responsible for more than it should be.
+- **Harder to Scale**: As the complexity of rental logic grows (e.g., different types of agreements, variable rent terms, multiple agreements per guest), managing this in the `Guest` entity will become more difficult. It can lead to a cluttered design that becomes harder to maintain and scale.
+- **Limited Flexibility**: If your system evolves to support more complex scenarios (e.g., renegotiating rent, varying contract terms), this design becomes rigid and harder to extend.
+
+### **Industry Best Practice**:
+For larger, more complex systems, **keeping a `RentalAgreement`** (or `LeaseAgreement`, etc.) is considered more **modular and scalable**, which aligns with best practices like SRP and DRY (Don't Repeat Yourself). It also ensures your system is more adaptable to future changes.
+
+#### **Common Industry Scenarios**:
+- **Complex Real Estate or Property Management Systems**: These systems typically model rental contracts separately from tenants (or guests). Rental agreements can involve detailed contract terms, rent adjustments, deposit handling, and more.
+- **Simple Applications (MVP or Small Systems)**: In small-scale applications (e.g., a simple PG management system), the rent logic can be managed within the guest entity as long as future scaling is not a priority.
+
+### **Conclusion**:
+- **If you expect your system to scale**, or if rent logic and agreements may become more complex, **keep the `RentalAgreement` entity**. It’s more aligned with best practices for building maintainable and scalable systems.
+- **If your system is simple and unlikely to grow in complexity**, handling rent logic directly in the `Guest` entity is acceptable and may simplify development.
+
+In general, **larger and more complex systems** in the industry tend to go with a
+ separate entity for rental agreements or contracts, as this provides more
+  flexibility and maintainability.

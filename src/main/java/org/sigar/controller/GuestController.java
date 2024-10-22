@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -55,6 +56,8 @@ public class GuestController {
         }
         return ResponseEntity.ok(guests);
     }
+
+
     @PostMapping
     public ResponseEntity<Guest> addGuest(@RequestBody Guest guest){
         Guest savedGuest = guestService.addGuest(guest);
@@ -100,4 +103,9 @@ public class GuestController {
         // Log the error (you can use a logger here)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
+    @GetMapping("/guests-page")
+    public String guestPage() {
+        return "guests";  // This looks for the guests.html in the templates folder
+    }
+
 }

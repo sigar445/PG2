@@ -26,7 +26,7 @@ public class Guest {
     private String phoneNumber;
     private LocalDate dateOfOccupancy;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id",referencedColumnName = "room_id")
     @JsonBackReference
     private Room room;

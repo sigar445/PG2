@@ -1,0 +1,117 @@
+The difference between `mappedBy` and `@JoinColumn` lies in how they define relationships between entities in JPA, specifically how they manage foreign keys and ownership of the relationship.
+
+### 1. **`mappedBy`**:
+- **Used in bidirectional relationships** to specify the **inverse side** of the relationship.
+- It indicates that the **ownership** of the relationship is managed by another entity.
+- The `mappedBy` attribute refers to the field in the **other entity** that owns the relationship and has the `@JoinColumn`.
+- No additional foreign key column is created in the database for the entity that has `mappedBy`; it uses the existing relationship defined by the owning side.
+
+In your case:
+
+```java
+@OneToMany(mappedBy = "rentalContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+private List<Transaction> transactions;
+```
+
+- **`mappedBy = "rentalContract"`** means that the `Transaction` entity contains the foreign key (via `@JoinColumn`), and the `RentalContract` entity is the **inverse side** of the relationship. The `Transaction` entity owns the relationship and contains the column that refers to `RentalContract` (e.g., `rental_contract_id`).
+- The `RentalContract` does not own the foreign key column; it just references the existing column in `Transaction`.
+
+### 2. **`@JoinColumn`**:
+- **Used to specify the owning side** of the relationship.
+- It indicates which entity owns the foreign key column and provides details about how that foreign key should be mapped to the database.
+- The entity with `@JoinColumn` is the **owner** of the relationship, meaning it contains the actual foreign key column in the table.
+
+In your case:
+
+```java
+@OneToOne
+@JoinColumn(name = "room_id", referencedColumnName = "room_id")
+private Room room;
+```
+
+- The `@JoinColumn(name = "room_id")` specifies that the `RentalContract` table will have a column called `room_id` that will store the foreign key referring to the `Room` entity.
+- This makes `RentalContract` the **owner** of the relationship with `Room` because it holds the foreign key (`room_id`).
+
+### Key Differences:
+
+| Concept         | `mappedBy`                                          | `@JoinColumn`                                   |
+|-----------------|-----------------------------------------------------|-------------------------------------------------|
+| **Relationship Ownership** | Defines the inverse (non-owning) side of a bidirectional relationship | Defines the owning side of the relationship (holds the foreign key) |
+| **Foreign Key** | No foreign key column is created in this entity; it uses the foreign key of the owning entity | Foreign key column is created in the entity that uses `@JoinColumn` |
+| **Use Case**    | Used in bidirectional relationships to point to the owning side | Used to specify the column that maps to another entity’s primary key |
+| **Where Applied** | In the non-owning side of a bidirectional relationship (e.g., `OneToMany` or `OneToOne` inverse side) | In the owning side of a relationship (e.g., `OneToOne`, `ManyToOne`) |
+
+### Example Scenario:
+If you have a `RentalContract` that holds multiple `Transaction` records:
+- **In `RentalContract`**, you use `@OneToMany(mappedBy = "rentalContract")`, indicating that `Transaction` owns the relationship and holds the foreign key.
+- **In `Transaction`**, you would have `@ManyToOne` with `@JoinColumn(name = "rental_contract_id")`, which actually holds the foreign key pointing back to `RentalContract`.
+
+Thus, `mappedBy` is a reference to the relationship in another entity, while
+`@JoinColumn` explicitly defines the foreign key column in the database for the
+owning entity.
+When we give the foreign key to the `Transaction` entity in a `OneToMany` relationship (where one `RentalContract` has many `Transaction` records), it follows the standard relational database principle of **foreign key placement** in the **"many" side** of the relationship. Here’s why and how fetching works:
+
+### Why the Foreign Key is Placed in `Transaction`:
+
+1. **Foreign Key Placement**:
+   In relational databases, foreign keys are usually placed in the table that represents the **"many" side** of a `OneToMany` relationship. This is because:
+   - The "many" side (`Transaction`) can easily hold a foreign key that points to the "one" side (`RentalContract`).
+   - Having the foreign key in the `Transaction` table allows multiple transactions to reference the same rental contract, making it efficient to represent the `OneToMany` relationship.
+
+2. **Normalization**:
+   The `Transaction` table, by holding a foreign key (`rental_contract_id`), maintains database normalization. If the foreign key were placed in `RentalContract`, it would lead to unnecessary duplication or additional complexity, violating the principles of relational database design.
+
+### How Fetching Works:
+
+In this `OneToMany` relationship, JPA provides a way to retrieve all transactions related to a specific rental contract through the foreign key in the `Transaction` table.
+
+1. **Fetching Transactions from a Rental Contract**:
+   - When you define a `@OneToMany` relationship in `RentalContract`, you map the relationship using `mappedBy`, meaning that the `Transaction` entity contains the foreign key (`rental_contract_id`) which points to the `RentalContract`.
+   - JPA will use this foreign key to perform a join when fetching all transactions for a rental contract.
+
+   **Example Fetching Logic:**
+   - When you fetch a `RentalContract`, you can get all associated `Transaction` records by traversing the `transactions` collection.
+   - Since `RentalContract` doesn’t store a foreign key, JPA will generate a query that joins `RentalContract` with `Transaction` using the `rental_contract_id` column in the `Transaction` table.
+
+   ### Example Query JPA Might Generate:
+   ```sql
+   SELECT t.*
+   FROM transaction t
+   WHERE t.rental_contract_id = :rentalContractId;
+   ```
+
+   This query fetches all rows in the `Transaction` table where the `rental_contract_id` matches the ID of the `RentalContract` you're querying for.
+
+2. **How `@OneToMany(mappedBy = ...)` Works in Fetching**:
+   - In `RentalContract`, the `@OneToMany(mappedBy = "rentalContract")` tells JPA that the relationship is managed by `Transaction` (i.e., `Transaction` owns the foreign key).
+   - JPA will automatically create the necessary join query to fetch all `Transaction` records related to a `RentalContract`.
+
+   ### Example Code for Fetching:
+   ```java
+   RentalContract rentalContract = rentalContractRepository.findById(rentalContractId);
+   List<Transaction> transactions = rentalContract.getTransactions();
+   ```
+
+   This will:
+   - Retrieve the `RentalContract` using its ID.
+   - Retrieve all associated `Transaction` objects that reference this `RentalContract` via the foreign key.
+
+3. **Lazy vs. Eager Fetching**:
+   - **Lazy Fetching** (`fetch = FetchType.LAZY`): Transactions are fetched only when explicitly accessed (e.g., `rentalContract.getTransactions()`).
+   - **Eager Fetching** (`fetch = FetchType.EAGER`): All transactions are fetched at the same time as the `RentalContract`.
+
+   Example for `Lazy Fetching`:
+   ```java
+   @OneToMany(mappedBy = "rentalContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+   private List<Transaction> transactions;
+   ```
+
+   - With lazy fetching, JPA does not load `Transaction` objects until you explicitly call `rentalContract.getTransactions()`. This is efficient when you don’t always need the associated transactions.
+
+### Summary:
+
+- **Foreign Key in `Transaction`**: The foreign key (`rental_contract_id`) is placed in the `Transaction` entity because it represents the "many" side of the `OneToMany` relationship. This keeps the database schema normalized and efficiently represents the relationship.
+- **Fetching Transactions**: When you fetch a `RentalContract`, JPA performs a join to the `Transaction` table using the foreign key (`rental_contract_id`) to retrieve all associated transactions.
+- **JPA Join Query**: Under the hood, JPA will issue a SQL query that selects all `Transaction` records where the foreign key matches the `RentalContract` ID.
+
+By having the foreign key in `Transaction`, fetching all related transactions from a `RentalContract` is simple and follows a normalized, efficient relational database design.

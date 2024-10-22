@@ -1,6 +1,8 @@
 package org.sigar.dto;
 
 import org.sigar.model.Guest;
+import org.sigar.model.PaymentTransaction;
+import org.sigar.model.RentalContract;
 import org.sigar.model.Room;
 
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ public class DTOConverter {
                 .stream()
                 .map(Guest::getName)
                 .toList();
+
         return new RoomResponseDTO(
                 room.getRoomId(),
                 room.getRoomNumber(),
@@ -31,12 +34,15 @@ public class DTOConverter {
 
     public static GuestResponseDTO covertToGuestDTO(Guest guest){
         Room room = guest.getRoom();
+        Long roomId = room != null ? room.getRoomId():null;
+        Integer roomNumber = room != null ? room.getRoomNumber():null;
+        Integer floor = room != null ? room.getFloor():null;
         return new GuestResponseDTO(guest.getGuestId(),
                 guest.getName(),
                 guest.getAge(),
-                room.getRoomId(),
-                room.getRoomNumber(),
-                room.getFloor(),
+                roomId,
+                roomNumber,
+                floor,
                 guest.getPhoneNumber(),
                 guest.getDateOfOccupancy());
     }
@@ -47,4 +53,27 @@ public class DTOConverter {
                 .toList();
     }
 
+    public static PaymentTransactionResponseDTO convertToPaymentTransactionResponseDTO(PaymentTransaction paymentTransaction){
+        Room room = paymentTransaction.getRoom();
+        Integer roomNumber = room !=null ? room.getRoomNumber():-1;
+        Guest guest = paymentTransaction.getGuest();
+        String guestName = guest != null ? guest.getName() : "N/A";
+        return new PaymentTransactionResponseDTO(
+                paymentTransaction.getTransactionID(),
+                roomNumber,
+                guestName,
+                paymentTransaction.getTransactionDate(),
+                paymentTransaction.getTransactionType(),
+                paymentTransaction.getAmount());
+    }
+
+    public static RentalContractResponseDTO convertToRentalContractResponseDTO(RentalContract rentalContract) {
+        return new RentalContractResponseDTO(
+                rentalContract.getId(),
+                rentalContract.getRoomNumber(),
+                rentalContract.getGuestName(),
+                rentalContract.getAdvanceAmountPaid(),
+                rentalContract.getRentDueDate(),
+                rentalContract.getMonthlyRentAmount());
+    }
 }

@@ -9,9 +9,9 @@ public record GuestResponseDTO(
         long guestId,
         String name,
         Integer age,
-        long roomId,
-        long roomNumber,
-        long floor,
+        Long roomId,
+        Integer roomNumber,
+        Integer floor,
         String phoneNumber,
         LocalDate dateOfOccupancy
 ) {
