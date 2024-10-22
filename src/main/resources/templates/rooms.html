@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room List</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">Room List</h1>
+
+    <!-- Room Form for adding a new room -->
+    <div class="card mb-4">
+        <div class="card-header font-weight-bold text-dark">
+            ADD NEW ROOM
+        </div>
+        <div class="card-body">
+            <form id="room-form">
+                <div class="form-group">
+                    <label for="roomNumber">Room Number</label>
+                    <input type="number" class="form-control" id="roomNumber" name="roomNumber" placeholder="Enter Room Number" required>
+                </div>
+                <div class="form-group">
+                    <label for="floor">Floor</label>
+                    <input type="number" class="form-control" id="floor" name="floor" placeholder="Enter Floor" required>
+                </div>
+                <div class="form-group">
+                    <label for="hasKitchen">Has Kitchen</label>
+                    <input type="checkbox" id="hasKitchen" name="hasKitchen">
+                </div>
+
+                <div class="form-group">
+                    <label for="hasAC">Has AC</label>
+                    <input type="checkbox" id="hasAC" name="hasAC">
+                </div>
+
+                <div class="form-group">
+                    <label for="isAvailable">Is Available</label>
+                    <input type="checkbox" id="isAvailable" name="isAvailable">
+                </div>
+
+                <div class="form-group">
+                    <label for="beds">Number of Beds</label>
+                    <select class="form-control" id="beds" name="beds" required>
+                        <option value="" disabled selected>Select number of beds</option>
+                        <option value="SINGLE">Single</option>
+                        <option value="DOUBLE">Double</option>
+                        <option value="TRIPLE">Triple</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="rent">Monthly Rent</label>
+                    <input type="number" class="form-control" id="rent" name="rent" placeholder="Enter Monthly Rent" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Add Room</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table to display room list -->
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Room Number</th>
+            <th>Floor</th>
+            <th>Has Kitchen</th>
+            <th>Has AC</th>
+            <th>Available</th>
+            <th>Monthly Rent</th>
+        </tr>
+        </thead>
+        <tbody id="room-table-body">
+        <!-- Rooms will be dynamically added here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Fetch and display all rooms when the page loads
+        loadRooms();
+
+        // Form submission handler to add a new room
+        $('#room-form').on('submit', function (event) {
+            event.preventDefault(); // Prevent default form submission
+
+            let rentValue = $('#rent').val();
+            if (isNaN(rentValue) || rentValue <= 0) {
+                alert('Please enter a valid rent amount.');
+                return;
+            }
+
+            // Collect form data
+            let roomData = {
+                roomNumber: $('#roomNumber').val(),
+                floor: $('#floor').val(),
+                hasKitchen: $('#hasKitchen').is(':checked'),
+                hasAC: $('#hasAC').is(':checked'),
+                isAvailable: $('#isAvailable').is(':checked'),
+                beds: $('#beds').val(),
+                rent: parseFloat(rentValue)
+            };
+
+            // AJAX POST request to add a new room
+            $.ajax({
+                url: 'http://localhost:8080/api/PG2/rooms',  // Your backend API endpoint
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(roomData),
+                success: function (response) {
+                    alert('Room added successfully!');
+                    loadRooms();  // Refresh the rooms list after adding
+                    $('#room-form')[0].reset();  // Clear the form
+                },
+                error: function (error) {
+                    console.error('Error adding room:', error);
+                    alert('Error adding room. Please check the inputs.');
+                }
+            });
+        });
+
+        // Function to fetch and display all rooms
+        function loadRooms() {
+            $.ajax({
+                url: 'http://localhost:8080/api/PG2/rooms',
+                type: 'GET',
+                success: function (data) {
+                    $('#room-table-body').empty();  // Clear the table body
+                    if (data.length === 0) {
+                        $('#room-table-body').append('<tr><td colspan="7">No rooms found</td></tr>');
+                    } else {
+                        $.each(data, function (index, room) {
+                            $('#room-table-body').append(
+                                '<tr>' +
+                                '<td>' + room.roomId + '</td>' +
+                                '<td>' + room.roomNumber + '</td>' +
+                                '<td>' + room.floor + '</td>' +
+                                '<td>' + (room.hasKitchen ? 'Yes' : 'No') + '</td>' +
+                                '<td>' + (room.hasAC ? 'Yes' : 'No') + '</td>' +
+                                '<td>' + (room.isAvailable ? 'Yes' : 'No') + '</td>' +
+                                '<td>' + room.rent + '</td>' +
+                                '</tr>'
+                            );
+                        });
+                    }
+                },
+                error: function (error) {
+                    console.error("Error fetching room data:", error);
+                    $('#room-table-body').append('<tr><td colspan="7">Error fetching room data</td></tr>');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

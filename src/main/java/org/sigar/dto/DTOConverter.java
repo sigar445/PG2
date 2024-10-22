@@ -1,5 +1,6 @@
 package org.sigar.dto;
 
+import org.sigar.Constants.enums.Beds;
 import org.sigar.model.Guest;
 import org.sigar.model.PaymentTransaction;
 import org.sigar.model.RentalContract;
@@ -20,7 +21,11 @@ public class DTOConverter {
                 room.getRoomId(),
                 room.getRoomNumber(),
                 room.getFloor(),
+                room.isHasKitchen(),
+                room.isHasAC(),
                 room.isAvailable(),
+                room.getRent(),
+                room.getBeds(),
                 guests
         );
     }

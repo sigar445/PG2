@@ -33,6 +33,7 @@ public class RoomController {
 
     @PostMapping
     public ResponseEntity<Room> addRoom(@RequestBody Room room) {
+        logger.info("Adding room ");
         return ResponseEntity.status(HttpStatus.CREATED).body(roomService.addRoom(room));
     }
 

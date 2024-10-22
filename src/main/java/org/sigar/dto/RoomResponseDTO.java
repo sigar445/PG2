@@ -1,16 +1,21 @@
 package org.sigar.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.sigar.Constants.enums.Beds;
 
 import java.util.List;
 
-@AllArgsConstructor
-@Data
-public class RoomResponseDTO {
-    private long roomId;
-    private int roomNumber;
-    private int floor;
-    boolean isAvailable;
-    private List<String> guestNames;
+public record RoomResponseDTO (
+    long roomId,
+    Integer roomNumber,
+    Integer floor,
+    Boolean hasKitchen,
+    Boolean hasAc,
+    Boolean isAvailable,
+    Integer rent,
+    Beds beds,
+    List<String> guestNames){
 }
